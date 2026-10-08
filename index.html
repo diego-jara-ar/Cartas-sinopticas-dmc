@@ -4,15 +4,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Carta sinóptica DMC</title>
-
+<title>Carta y condiciones sinópticas DMC</title>
 <style>
+  * { box-sizing: border-box; }
+
   body {
     margin: 0;
-    padding: 12px;
+    padding: 16px;
     font-family: Arial, sans-serif;
     background: #f4f7fa;
-    color: #17324d;
+    color: #18334c;
   }
 
   .contenedor {
@@ -22,25 +23,77 @@
 
   h2 {
     margin: 0 0 8px;
-    font-size: 20px;
+    font-size: 21px;
   }
 
   .info {
-    margin-bottom: 12px;
     font-size: 13px;
+    color: #526477;
+    margin-bottom: 12px;
   }
 
-  img {
+  .carta {
+    display: block;
     width: 100%;
     height: auto;
-    display: block;
-    border-radius: 5px;
+    border-radius: 6px;
+    background: white;
+  }
+
+  h3 {
+    margin: 24px 0 6px;
+    font-size: 19px;
+  }
+
+  .subtitulo {
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: #526477;
+  }
+
+  .zonas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .zona {
+    background: white;
+    border: 1px solid #dbe3eb;
+    border-radius: 8px;
+    padding: 15px;
+  }
+
+  .zona.centro {
+    grid-column: 1 / -1;
+    border-left: 5px solid #2676a8;
+    background: #edf5fa;
+  }
+
+  .zona h4 {
+    margin: 0 0 9px;
+    font-size: 14px;
+    color: #174d73;
+    text-transform: uppercase;
+  }
+
+  .zona p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
   }
 
   .pie {
-    margin-top: 10px;
+    margin-top: 17px;
     font-size: 12px;
     color: #526477;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 650px) {
+    body { padding: 10px; }
+    .zonas { grid-template-columns: 1fr; }
+    .zona.centro { grid-column: auto; }
   }
 </style>
 </head>
@@ -53,16 +106,37 @@
     Consultando última carta disponible...
   </div>
 
-  <img id="carta"
-       alt="Carta sinóptica de la Dirección Meteorológica de Chile">
+  <img
+    class="carta"
+    id="carta"
+    alt="Carta sinóptica de la Dirección Meteorológica de Chile"
+  >
+
+  <h3>Condiciones sinópticas en Chile continental e insular</h3>
+
+  <div class="subtitulo" id="estadoCondiciones">
+    Consultando descripciones oficiales...
+  </div>
+
+  <div class="zonas" id="zonas"></div>
 
   <div class="pie">
     Fuente: Dirección Meteorológica de Chile (DMC).
-    Actualización automática cada 15 minutos.
+    Información reproducida desde sus publicaciones oficiales.
+    Consulta automática cada 15 minutos.
   </div>
 </div>
 
 <script>
+const nombres = [
+  "Zona centro",
+  "Zona norte",
+  "Zona sur",
+  "Zona austral",
+  "Archipiélago Juan Fernández",
+  "Isla de Pascua"
+];
+
 async function actualizar() {
   const version = Date.now();
 
@@ -73,21 +147,86 @@ async function actualizar() {
     );
 
     if (!respuesta.ok) {
-      throw new Error("No se pudo consultar la fecha");
+      throw new Error("No se pudo consultar la emisión");
     }
 
     const texto = await respuesta.text();
-    const fecha = texto.split("\n")[0];
+    const emision = texto.split("\n")[0].trim();
 
     document.getElementById("estado").textContent =
-      "Emisión: " + fecha;
+      "Emisión: " + emision;
 
     document.getElementById("carta").src =
       "carta_actual.jpg?v=" + version;
 
+    await cargarCondiciones(version, emision);
+
   } catch (error) {
     document.getElementById("estado").textContent =
       "No se pudo verificar la última actualización";
+  }
+}
+
+async function cargarCondiciones(version, emisionCarta) {
+  const contenedor = document.getElementById("zonas");
+  const estado = document.getElementById("estadoCondiciones");
+
+  try {
+    const respuesta = await fetch(
+      "condiciones_actuales.json?v=" + version,
+      { cache: "no-store" }
+    );
+
+    if (!respuesta.ok) {
+      throw new Error("Descripciones no disponibles");
+    }
+
+    const datos = await respuesta.json();
+
+    if (datos.emision !== emisionCarta) {
+      throw new Error(
+        "Las descripciones no corresponden a la emisión actual"
+      );
+    }
+
+    contenedor.replaceChildren();
+
+    let cantidad = 0;
+
+    for (const nombre of nombres) {
+      const descripcion = datos.zonas?.[nombre];
+
+      if (!descripcion) continue;
+
+      const tarjeta = document.createElement("div");
+      tarjeta.className =
+        nombre === "Zona centro" ? "zona centro" : "zona";
+
+      const titulo = document.createElement("h4");
+      titulo.textContent = nombre;
+
+      const parrafo = document.createElement("p");
+      parrafo.textContent = descripcion;
+
+      tarjeta.append(titulo, parrafo);
+      contenedor.appendChild(tarjeta);
+
+      cantidad++;
+    }
+
+    if (cantidad === 0) {
+      throw new Error("No se encontraron zonas válidas");
+    }
+
+    estado.textContent =
+      "Descripción oficial correspondiente a la emisión: "
+      + datos.emision;
+
+  } catch (error) {
+    contenedor.replaceChildren();
+    estado.textContent =
+      "Las condiciones sinópticas no están disponibles "
+      + "para esta emisión.";
   }
 }
 
