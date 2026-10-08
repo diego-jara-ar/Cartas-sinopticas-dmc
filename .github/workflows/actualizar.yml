@@ -35,6 +35,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add carta_actual.jpg ultima_actualizacion.txt
+          git add -A condiciones_actuales.json
 
           if ! git diff --cached --quiet; then
             git commit -m "Actualizar carta sinóptica DMC"
