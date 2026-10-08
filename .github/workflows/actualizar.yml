@@ -1,0 +1,43 @@
+
+name: Actualizar carta sinóptica DMC
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-carta-dmc
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Buscar última carta sinóptica
+        run: python actualizar_carta.py
+
+      - name: Guardar carta actualizada
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add carta_actual.jpg ultima_actualizacion.txt
+
+          if ! git diff --cached --quiet; then
+            git commit -m "Actualizar carta sinóptica DMC"
+            git push
+          else
+            echo "No hay cambios que guardar"
+          fi
