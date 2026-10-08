@@ -28,7 +28,8 @@ jobs:
 
       - name: Buscar última carta sinóptica
         run: python actualizar_carta.py
-
+      - name: Probar extracción del texto DMC
+        run: python probar_texto.py
       - name: Guardar carta actualizada
         run: |
           git config user.name "github-actions[bot]"
