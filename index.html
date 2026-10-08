@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carta sinóptica DMC</title>
+
+<style>
+  body {
+    margin: 0;
+    padding: 12px;
+    font-family: Arial, sans-serif;
+    background: #f4f7fa;
+    color: #17324d;
+  }
+
+  .contenedor {
+    max-width: 1400px;
+    margin: auto;
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+
+  .info {
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 5px;
+  }
+
+  .pie {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #526477;
+  }
+</style>
+</head>
+
+<body>
+<div class="contenedor">
+  <h2>Carta sinóptica de superficie</h2>
+
+  <div class="info" id="estado">
+    Consultando última carta disponible...
+  </div>
+
+  <img id="carta"
+       alt="Carta sinóptica de la Dirección Meteorológica de Chile">
+
+  <div class="pie">
+    Fuente: Dirección Meteorológica de Chile (DMC).
+    Actualización automática cada 15 minutos.
+  </div>
+</div>
+
+<script>
+async function actualizar() {
+  const version = Date.now();
+
+  try {
+    const respuesta = await fetch(
+      "ultima_actualizacion.txt?v=" + version,
+      { cache: "no-store" }
+    );
+
+    if (!respuesta.ok) {
+      throw new Error("No se pudo consultar la fecha");
+    }
+
+    const texto = await respuesta.text();
+    const fecha = texto.split("\n")[0];
+
+    document.getElementById("estado").textContent =
+      "Emisión: " + fecha;
+
+    document.getElementById("carta").src =
+      "carta_actual.jpg?v=" + version;
+
+  } catch (error) {
+    document.getElementById("estado").textContent =
+      "No se pudo verificar la última actualización";
+  }
+}
+
+actualizar();
+setInterval(actualizar, 15 * 60 * 1000);
+</script>
+</body>
+</html>
