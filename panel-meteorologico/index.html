@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pronóstico meteorológico operacional RM</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#edf2f6;color:#17324d;font-family:Arial,sans-serif}
+main{max-width:1450px;margin:auto;padding:18px}
+header{background:#153b56;color:white;padding:20px;border-radius:10px}
+h1{font-size:23px;margin:0 0 8px}
+.subtitle{font-size:14px;color:#d5e7f2}
+nav{display:flex;gap:10px;margin:18px 0}
+button{flex:1;border:1px solid #b9c9d5;background:white;padding:13px;cursor:pointer;border-radius:7px;font-weight:bold;color:#17324d}
+button.activo{background:#18769d;color:white;border-color:#18769d}
+section{background:white;border-radius:10px;padding:18px;margin-bottom:15px}
+h2{font-size:18px;margin:0 0 12px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:13px 9px;border-bottom:1px solid #e2e9ef;text-align:center}
+th{background:#eaf2f8}
+th:first-child,td:first-child{text-align:left;font-weight:bold}
+.sin-datos{color:#718496}
+.info{font-size:13px;color:#526b7c;line-height:1.6}
+.aviso{background:#fff5df;border-left:4px solid #d99b28;padding:12px;border-radius:5px;font-size:13px}
+@media(max-width:700px){
+ main{padding:8px}
+ h1{font-size:18px}
+ section{padding:10px;overflow-x:auto}
+ table{font-size:12px;min-width:650px}
+ th,td{padding:10px 5px}
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>PRONÓSTICO METEOROLÓGICO OPERACIONAL</h1>
+<div class="subtitle">Región Metropolitana de Santiago · Horizonte de 72 horas</div>
+</header>
+
+<nav>
+<button class="activo" onclick="cambiarDia(0)">DÍA 1</button>
+<button onclick="cambiarDia(1)">DÍA 2</button>
+<button onclick="cambiarDia(2)">DÍA 3</button>
+</nav>
+
+<section>
+<h2 id="titulo">Condiciones meteorológicas · Día 1</h2>
+<table>
+<thead>
+<tr>
+<th>Provincia</th>
+<th>T° máx.<br>(°C)</th>
+<th>HR mín.<br>(%)</th>
+<th>Viento<br>(km/h)</th>
+<th>Racha<br>(km/h)</th>
+<th>Ventana de atención</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+</section>
+
+<section>
+<h2>Aspectos meteorológicos de atención</h2>
+<div id="resumen" class="aviso">
+Esperando conexión con datos meteorológicos.
+</div>
+</section>
+
+<section>
+<h2>Información del pronóstico</h2>
+<div class="info" id="actualizacion">
+Estado: versión inicial del panel, sin datos meteorológicos conectados.
+</div>
+<p class="info">
+Los indicadores meteorológicos son antecedentes para el análisis
+del potencial de comportamiento del fuego. No constituyen por sí
+solos una clasificación oficial de riesgo ni una recomendación de despacho.
+</p>
+</section>
+</main>
+
+<script>
+const provincias=[
+"Chacabuco","Cordillera","Maipo",
+"Melipilla","Santiago","Talagante"
+];
+
+function cambiarDia(dia){
+ document.querySelectorAll("nav button").forEach((boton,i)=>{
+  boton.classList.toggle("activo",i===dia);
+ });
+ document.getElementById("titulo").textContent=
+  "Condiciones meteorológicas · Día "+(dia+1);
+ mostrarTabla();
+}
+
+function mostrarTabla(){
+ const tabla=document.getElementById("tabla");
+ tabla.innerHTML=provincias.map(nombre=>`
+ <tr>
+ <td>${nombre}</td>
+ <td class="sin-datos">—</td>
+ <td class="sin-datos">—</td>
+ <td class="sin-datos">—</td>
+ <td class="sin-datos">—</td>
+ <td class="sin-datos">Pendiente</td>
+ </tr>`).join("");
+}
+
+mostrarTabla();
+</script>
+</body>
+</html>
