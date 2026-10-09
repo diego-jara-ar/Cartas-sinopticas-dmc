@@ -1,13 +1,11 @@
 {
-  "emision": "20261008 12:00 UTC",
-  "archivo_carta": "carta_sinoptica_20261008-12UTC.jpg",
+  "emision": "20261009 00:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261009-00UTC.jpg",
   "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
   "zonas": {
-    "Zona norte": "Baja térmica, Altas presiones y Corriente en chorro",
-    "Zona centro": "Altas presiones y Inestabilidad en cordillera",
-    "Zona sur": "Altas presiones, Inestabilidad atmosférica, Presencia de un frente ocluido y Tormentas eléctricas",
-    "Zona austral": "Altas presiones",
-    "Archipiélago Juan Fernández": "Altas presiones",
-    "Isla de Pascua": "Presencia de un frente frío y Río atmosférico"
+    "Zona norte": "Bajas presiones en superficie y Corriente en chorro",
+    "Zona centro": "Inestabilidad atmosférica, Vaguada difluente en altura, Plegamiento de tropopausa y Tormentas eléctricas",
+    "Zona sur": "Presencia de un frente ocluido, Línea de inestabilidad, Plegamiento de tropopausa y Tormentas eléctricas",
+    "Zona austral": "Altas presiones y Dorsal en altura"
   }
 }
