@@ -32,6 +32,20 @@ td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
 .muestra{width:13px;height:13px;border-radius:3px;border:1px solid #ccd6df}
 .muestra.rojo{background:#fce8e6}.muestra.naranjo{background:#fff0d8}.muestra.azul{background:#e5f1fc}
 @media(max-width:700px){main{padding:8px}h1{font-size:18px}section{padding:10px;overflow-x:auto}table{font-size:12px;min-width:650px}th,td{padding:10px 5px}}
+
+/* Matriz horaria de dirección del viento */
+.matriz-scroll{overflow-x:auto;border:1px solid #e2e9ef;border-radius:8px;margin-top:12px}
+.matriz-viento{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:12px}
+.matriz-viento th,.matriz-viento td{padding:8px 6px;min-width:59px;text-align:center;border-bottom:1px solid #e2e9ef;border-right:1px solid #eef2f5}
+.matriz-viento thead th{position:sticky;top:0;background:#eaf2f8;z-index:1}
+.matriz-viento th:first-child,.matriz-viento td:first-child{position:sticky;left:0;min-width:120px;text-align:left;background:#fff;z-index:2;font-weight:bold}
+.matriz-viento thead th:first-child{background:#eaf2f8;z-index:3}
+.viento-celda{display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
+.viento-flecha{display:inline-block;font-size:23px;line-height:25px;color:#18769d;transform-origin:center center}
+.viento-grados{font-size:11px;color:#526b7c}
+.matriz-viento td.viento-moderado{background:#fff5df}
+.matriz-viento td.viento-fuerte{background:#fce8e6}
+.matriz-viento td.viento-moderado:first-child,.matriz-viento td.viento-fuerte:first-child{background:#fff}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
 </head>
@@ -88,6 +102,18 @@ td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
   Analizando coincidencias horarias de humedad relativa y viento...
 </div>
 </section>
+
+<section>
+  <h2>Dirección del viento · Evolución horaria provincial</h2>
+  <div class="info">Cada fila corresponde a un punto de pronóstico provincial. Las flechas muestran <strong>hacia dónde se desplaza el viento</strong>; los grados indican la dirección meteorológica <strong>desde donde proviene</strong> (0° = norte, 90° = este, 180° = sur, 270° = oeste). Velocidades sostenidas en km/h.</div>
+  <div class="matriz-scroll" role="region" aria-label="Matriz de dirección del viento por provincia y hora" tabindex="0">
+    <table class="matriz-viento">
+      <thead id="viento-direccion-cabecera"></thead>
+      <tbody id="viento-direccion-cuerpo"><tr><td>Cargando dirección del viento...</td></tr></tbody>
+    </table>
+  </div>
+  <p class="info" style="margin-bottom:0">Fondo amarillo: viento sostenido ≥ 20 km/h; fondo rojo: ≥ 30 km/h. Umbrales visuales exploratorios, no equivalentes a peligro oficial. Desplázate horizontalmente para revisar todas las horas.</p>
+</section>
 <section><h2>Aspectos meteorológicos de atención</h2><div id="resumen" class="aviso">Esperando conexión con datos meteorológicos.</div></section>
 <section><h2>Información del pronóstico</h2><div class="info" id="actualizacion">Cargando datos meteorológicos.</div>
 <p class="info">Los indicadores meteorológicos son antecedentes para el análisis del potencial de comportamiento del fuego. No constituyen por sí solos una clasificación oficial de riesgo ni una recomendación de despacho. Los umbrales visuales son exploratorios y deben validarse antes de su uso operacional.</p></section>
@@ -116,6 +142,7 @@ function cambiarDia(dia) {
   mostrarTabla();
   actualizarGrafico();
   actualizarVentanasHorarias();
+  actualizarDireccionViento();
 }
 function fechaLocal(fechaISO, desplazamiento) {
   const fecha = new Date(fechaISO + "T12:00:00");
@@ -224,11 +251,13 @@ async function cargarDatos() {
     mostrarTabla();
     actualizarGrafico();
     actualizarVentanasHorarias();
+    actualizarDireccionViento();
   } catch(error) {
     document.getElementById("tabla").innerHTML = '<tr><td colspan="6">No fue posible cargar los datos.</td></tr>';
     document.getElementById("resumen").textContent = "No hay datos disponibles para elaborar una síntesis.";
     document.getElementById("actualizacion").textContent = "Error al obtener el pronóstico.";
     document.getElementById("ventanas-horarias").textContent = "No fue posible analizar las coincidencias horarias.";
+    document.getElementById("viento-direccion-cuerpo").innerHTML = "<tr><td>No fue posible cargar la dirección del viento.</td></tr>";
     console.error(error);
   }
 }
@@ -450,8 +479,84 @@ function actualizarVentanasHorarias() {
   }
 }
 
+
+function actualizarDireccionViento() {
+  const cabecera = document.getElementById("viento-direccion-cabecera");
+  const cuerpo = document.getElementById("viento-direccion-cuerpo");
+  if (!cabecera || !cuerpo || !datos || !Array.isArray(datos.puntos)) return;
+
+  const puntoBase = datos.puntos.find(p => p.horarios && Array.isArray(p.horarios.time) && p.horarios.time.length);
+  if (!puntoBase) {
+    cabecera.replaceChildren();
+    cuerpo.textContent = "No hay datos horarios disponibles.";
+    return;
+  }
+  const fecha = claveFecha(fechaLocal(puntoBase.horarios.time[0].slice(0, 10), diaSeleccionado));
+  const horas = puntoBase.horarios.time.filter(t => t.startsWith(fecha));
+  cabecera.replaceChildren();
+  cuerpo.replaceChildren();
+  if (!horas.length) {
+    const fila = document.createElement("tr");
+    const celda = document.createElement("td");
+    celda.textContent = "No hay pronóstico horario para este día.";
+    fila.appendChild(celda);
+    cuerpo.appendChild(fila);
+    return;
+  }
+
+  const filaCabecera = document.createElement("tr");
+  const encabezadoProvincia = document.createElement("th");
+  encabezadoProvincia.textContent = "Provincia";
+  filaCabecera.appendChild(encabezadoProvincia);
+  horas.forEach(t => {
+    const th = document.createElement("th");
+    th.textContent = t.slice(11, 16);
+    filaCabecera.appendChild(th);
+  });
+  cabecera.appendChild(filaCabecera);
+
+  provincias.forEach(nombre => {
+    const punto = datos.puntos.find(p => p.provincia === nombre);
+    const fila = document.createElement("tr");
+    const titulo = document.createElement("th");
+    titulo.scope = "row";
+    titulo.textContent = nombre;
+    fila.appendChild(titulo);
+    const h = punto?.horarios;
+    horas.forEach(t => {
+      const td = document.createElement("td");
+      const i = Array.isArray(h?.time) ? h.time.indexOf(t) : -1;
+      const direccion = i >= 0 ? h.wind_direction_10m?.[i] : null;
+      const velocidad = i >= 0 ? h.wind_speed_10m?.[i] : null;
+      if (Number.isFinite(direccion)) {
+        const caja = document.createElement("div");
+        caja.className = "viento-celda";
+        const flecha = document.createElement("span");
+        flecha.className = "viento-flecha";
+        flecha.textContent = "↑";
+        flecha.style.transform = `rotate(${(direccion + 180) % 360}deg)`;
+        const grados = document.createElement("span");
+        grados.className = "viento-grados";
+        grados.textContent = `${Math.round(direccion)}°`;
+        caja.append(flecha, grados);
+        td.appendChild(caja);
+        td.title = `${nombre}, ${t.slice(11, 16)}: viento desde ${Math.round(direccion)}°` +
+          (Number.isFinite(velocidad) ? `, velocidad ${velocidad.toFixed(1)} km/h` : "");
+      } else {
+        td.textContent = "—";
+        td.title = `${nombre}, ${t.slice(11, 16)}: sin dato de dirección`;
+      }
+      if (Number.isFinite(velocidad)) {
+        if (velocidad >= 30) td.classList.add("viento-fuerte");
+        else if (velocidad >= 20) td.classList.add("viento-moderado");
+      }
+      fila.appendChild(td);
+    });
+    cuerpo.appendChild(fila);
+  });
+}
+
 cargarDatos();
 </script>
 </body>
 </html>
-
