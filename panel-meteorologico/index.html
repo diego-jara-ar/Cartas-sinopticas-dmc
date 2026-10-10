@@ -111,14 +111,15 @@ td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
 
 <section>
   <h2>Dirección del viento · Evolución horaria provincial</h2>
-  <div class="info">Cada fila corresponde a un punto de pronóstico provincial. Las flechas muestran <strong>hacia dónde se desplaza el viento</strong>; los grados indican la dirección meteorológica <strong>desde donde proviene</strong> (0° = norte, 90° = este, 180° = sur, 270° = oeste). Velocidades sostenidas en km/h.</div>
+  <div class="info">Cada fila corresponde a un punto de pronóstico provincial. Las flechas muestran <strong>hacia dónde se desplaza el viento</strong>; los grados indican la dirección meteorológica <strong>desde donde proviene</strong> (0° = norte, 90° = este, 180° = sur, 270° = oeste). Velocidades sostenidas en km/h. Las siglas indican de dónde proviene el viento.</div>
   <div class="matriz-scroll" role="region" aria-label="Matriz de dirección del viento por provincia y hora" tabindex="0">
     <table class="matriz-viento">
       <thead id="viento-direccion-cabecera"></thead>
       <tbody id="viento-direccion-cuerpo"><tr><td>Cargando dirección del viento...</td></tr></tbody>
     </table>
   </div>
-  <p class="info" style="margin-bottom:0">Fondo amarillo: viento sostenido ≥ 20 km/h; fondo rojo: ≥ 30 km/h. Umbrales visuales exploratorios, no equivalentes a peligro oficial. Desplázate horizontalmente para revisar todas las horas.</p>
+  <p class="info" style="margin-bottom:0">Fondo amarillo: viento sostenido ≥ 20 km/h; fondo rojo: ≥ 30 km/h. Umbrales visuales exploratorios, no equivalentes a peligro oficial. En pantallas pequeñas puede ser necesario desplazarse horizontalmente.</p>
+  <div id="giros-viento" class="info" style="margin-top:14px;padding:14px;background:#f0f5f9;border-radius:7px" aria-live="polite">Analizando cambios persistentes de dirección del viento...</div>
 </section>
 <section><h2>Aspectos meteorológicos de atención</h2><div id="resumen" class="aviso">Esperando conexión con datos meteorológicos.</div></section>
 <section><h2>Información del pronóstico</h2><div class="info" id="actualizacion">Cargando datos meteorológicos.</div>
@@ -149,6 +150,7 @@ function cambiarDia(dia) {
   actualizarGrafico();
   actualizarVentanasHorarias();
   actualizarDireccionViento();
+  actualizarGirosViento();
 }
 function fechaLocal(fechaISO, desplazamiento) {
   const fecha = new Date(fechaISO + "T12:00:00");
@@ -258,12 +260,14 @@ async function cargarDatos() {
     actualizarGrafico();
     actualizarVentanasHorarias();
     actualizarDireccionViento();
+  actualizarGirosViento();
   } catch(error) {
     document.getElementById("tabla").innerHTML = '<tr><td colspan="6">No fue posible cargar los datos.</td></tr>';
     document.getElementById("resumen").textContent = "No hay datos disponibles para elaborar una síntesis.";
     document.getElementById("actualizacion").textContent = "Error al obtener el pronóstico.";
     document.getElementById("ventanas-horarias").textContent = "No fue posible analizar las coincidencias horarias.";
     document.getElementById("viento-direccion-cuerpo").innerHTML = "<tr><td>No fue posible cargar la dirección del viento.</td></tr>";
+    document.getElementById("giros-viento").textContent = "No fue posible analizar los cambios de dirección.";
     console.error(error);
   }
 }
@@ -566,6 +570,53 @@ function actualizarDireccionViento() {
     });
     cuerpo.appendChild(fila);
   });
+}
+
+// Criterios exploratorios: giro >=90°, viento >=15 km/h durante
+// dos horas consecutivas posteriores, dirección estable dentro de 45°.
+function diferenciaCircular(a, b) {
+  return Math.abs(((a - b + 540) % 360) - 180);
+}
+
+function actualizarGirosViento() {
+  const salida = document.getElementById("giros-viento");
+  if (!salida || !datos || !Array.isArray(datos.puntos)) return;
+  const base = datos.puntos.find(p => Array.isArray(p.horarios?.time) && p.horarios.time.length);
+  if (!base) { salida.textContent = "No hay datos horarios para analizar giros."; return; }
+  const fecha = claveFecha(fechaLocal(base.horarios.time[0].slice(0, 10), diaSeleccionado));
+  const hallazgos = [];
+  let puntosConDatos = 0;
+
+  for (const nombre of provincias) {
+    const h = datos.puntos.find(p => p.provincia === nombre)?.horarios;
+    if (!Array.isArray(h?.time) || !Array.isArray(h.wind_direction_10m) || !Array.isArray(h.wind_speed_10m)) continue;
+    const indices = h.time.map((t, i) => t.startsWith(fecha) ? i : -1).filter(i => i >= 0);
+    if (indices.length < 3) continue;
+    puntosConDatos++;
+    for (let k = 1; k < indices.length - 1; k++) {
+      const antes = indices[k - 1], ahora = indices[k], despues = indices[k + 1];
+      // Comprobar horas contiguas, no solo índices consecutivos.
+      if (Date.parse(h.time[ahora]) - Date.parse(h.time[antes]) !== 3600000 ||
+          Date.parse(h.time[despues]) - Date.parse(h.time[ahora]) !== 3600000) continue;
+      const a = h.wind_direction_10m[antes], b = h.wind_direction_10m[ahora], c = h.wind_direction_10m[despues];
+      const vb = h.wind_speed_10m[ahora], vc = h.wind_speed_10m[despues];
+      if (![a,b,c,vb,vc].every(Number.isFinite)) continue;
+      const giro = diferenciaCircular(a,b);
+      if (giro < 90 || diferenciaCircular(b,c) > 45 || vb < 15 || vc < 15) continue;
+      hallazgos.push({nombre, hora:h.time[ahora].slice(11,16), hasta:h.time[despues].slice(11,16),
+        desde:siglaDireccion(a), hacia:siglaDireccion(b), giro:Math.round(giro), velocidad:Math.min(vb,vc)});
+      k++; // Evitar duplicar el mismo episodio inmediato.
+    }
+  }
+  if (!puntosConDatos) {
+    salida.textContent = "No hay datos suficientes de dirección y velocidad para evaluar los cambios.";
+  } else if (!hallazgos.length) {
+    salida.textContent = "CAMBIOS DE DIRECCIÓN | No se detectan giros que cumplan simultáneamente los criterios exploratorios en los puntos con datos del día seleccionado (giro ≥ 90°, viento sostenido ≥ 15 km/h durante dos horas y persistencia direccional dentro de 45°). Esto no descarta cambios locales relevantes.";
+  } else {
+    salida.textContent = "CAMBIOS DE DIRECCIÓN A REVISAR | " + hallazgos.map(g =>
+      `${g.nombre}: ${g.hora}–${g.hasta}, de ${g.desde} a ${g.hacia} (giro ${g.giro}°, viento ≥ ${g.velocidad.toFixed(1)} km/h en ambas horas)`
+    ).join(" · ") + ". Detección exploratoria en puntos de modelo; verificar con observaciones y condiciones locales.";
+  }
 }
 
 cargarDatos();
