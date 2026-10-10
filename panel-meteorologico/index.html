@@ -33,19 +33,25 @@ td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
 .muestra.rojo{background:#fce8e6}.muestra.naranjo{background:#fff0d8}.muestra.azul{background:#e5f1fc}
 @media(max-width:700px){main{padding:8px}h1{font-size:18px}section{padding:10px;overflow-x:auto}table{font-size:12px;min-width:650px}th,td{padding:10px 5px}}
 
-/* Matriz horaria de dirección del viento */
-.matriz-scroll{overflow-x:auto;border:1px solid #e2e9ef;border-radius:8px;margin-top:12px}
-.matriz-viento{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:12px}
-.matriz-viento th,.matriz-viento td{padding:8px 6px;min-width:59px;text-align:center;border-bottom:1px solid #e2e9ef;border-right:1px solid #eef2f5}
-.matriz-viento thead th{position:sticky;top:0;background:#eaf2f8;z-index:1}
-.matriz-viento th:first-child,.matriz-viento td:first-child{position:sticky;left:0;min-width:120px;text-align:left;background:#fff;z-index:2;font-weight:bold}
-.matriz-viento thead th:first-child{background:#eaf2f8;z-index:3}
-.viento-celda{display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
-.viento-flecha{display:inline-block;font-size:23px;line-height:25px;color:#18769d;transform-origin:center center}
-.viento-grados{font-size:12px;color:#17324d;font-weight:700}
+/* Matriz de 24 horas: ancho distribuido en pantalla grande */
+.matriz-scroll{width:100%;overflow-x:auto;border:1px solid #e2e9ef;border-radius:8px;margin-top:12px}
+.matriz-viento{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:11px}
+.matriz-viento th,.matriz-viento td{padding:6px 1px;min-width:0;text-align:center;border-bottom:1px solid #e2e9ef;border-right:1px solid #eef2f5;overflow:hidden}
+.matriz-viento thead th{background:#eaf2f8;font-size:10px;white-space:nowrap}
+.matriz-viento th:first-child,.matriz-viento td:first-child{width:112px;text-align:left;padding-left:7px;background:#fff;font-weight:bold;font-size:11px}
+.matriz-viento thead th:first-child{background:#eaf2f8}
+.viento-celda{display:flex;flex-direction:column;align-items:center;gap:1px;white-space:nowrap}
+.viento-flecha{display:inline-block;font-size:19px;line-height:21px;color:#18769d;transform-origin:center center}
+.viento-grados{font-size:10px;color:#17324d;font-weight:700}
 .matriz-viento td.viento-moderado{background:#fff5df}
 .matriz-viento td.viento-fuerte{background:#fce8e6}
-.matriz-viento td.viento-moderado:first-child,.matriz-viento td.viento-fuerte:first-child{background:#fff}
+/* En pantallas estrechas priorizar legibilidad y permitir desplazamiento. */
+@media(max-width:1150px){
+ .matriz-viento{width:1250px;table-layout:fixed}
+ .matriz-viento th:first-child,.matriz-viento td:first-child{width:125px;position:sticky;left:0;z-index:2}
+ .matriz-viento thead th:first-child{z-index:3}
+ .matriz-viento td:first-child{background:#fff}
+}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
 </head>
