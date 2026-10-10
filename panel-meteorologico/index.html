@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -23,14 +22,16 @@ th{background:#eaf2f8}
 th:first-child,td:first-child{text-align:left;font-weight:bold}
 .sin-datos{color:#718496}
 .info{font-size:13px;color:#526b7c;line-height:1.6}
-.aviso{background:#fff5df;border-left:4px solid #d99b28;padding:12px;border-radius:5px;font-size:13px}
-@media(max-width:700px){
- main{padding:8px}
- h1{font-size:18px}
- section{padding:10px;overflow-x:auto}
- table{font-size:12px;min-width:650px}
- th,td{padding:10px 5px}
-}
+.aviso{background:#fff5df;border-left:4px solid #d99b28;padding:12px;border-radius:5px;font-size:13px;line-height:1.6}
+/* Colores de apoyo al análisis; no representan riesgo oficial. */
+td.nivel-rojo{background:#fce8e6;color:#a4262c;font-weight:bold}
+td.nivel-naranjo{background:#fff0d8;color:#955600;font-weight:bold}
+td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
+.leyenda{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:14px;font-size:12px;color:#526b7c}
+.leyenda span{display:inline-flex;align-items:center;gap:6px}
+.muestra{width:13px;height:13px;border-radius:3px;border:1px solid #ccd6df}
+.muestra.rojo{background:#fce8e6}.muestra.naranjo{background:#fff0d8}.muestra.azul{background:#e5f1fc}
+@media(max-width:700px){main{padding:8px}h1{font-size:18px}section{padding:10px;overflow-x:auto}table{font-size:12px;min-width:650px}th,td{padding:10px 5px}}
 </style>
 </head>
 <body>
@@ -39,184 +40,162 @@ th:first-child,td:first-child{text-align:left;font-weight:bold}
 <h1>PRONÓSTICO METEOROLÓGICO OPERACIONAL</h1>
 <div class="subtitle">Región Metropolitana de Santiago · Horizonte de 72 horas</div>
 </header>
-
 <nav>
 <button class="activo" onclick="cambiarDia(0)">DÍA 1</button>
 <button onclick="cambiarDia(1)">DÍA 2</button>
 <button onclick="cambiarDia(2)">DÍA 3</button>
 </nav>
-
 <section>
 <h2 id="titulo">Condiciones meteorológicas · Día 1</h2>
 <table>
-<thead>
-<tr>
-<th>Provincia</th>
-<th>T° máx.<br>(°C)</th>
-<th>HR mín.<br>(%)</th>
-<th>Viento<br>(km/h)</th>
-<th>Racha<br>(km/h)</th>
-<th>Ventana de atención</th>
-</tr>
-</thead>
+<thead><tr><th>Provincia</th><th>T° máx.<br>(°C)</th><th>HR mín.<br>(%)</th><th>Viento<br>(km/h)</th><th>Racha<br>(km/h)</th><th>Ventana de atención</th></tr></thead>
 <tbody id="tabla"></tbody>
 </table>
-</section>
-
-<section>
-<h2>Aspectos meteorológicos de atención</h2>
-<div id="resumen" class="aviso">
-Esperando conexión con datos meteorológicos.
+<div class="leyenda" aria-label="Leyenda de resaltado">
+<span><i class="muestra rojo"></i>Umbral superior de atención</span>
+<span><i class="muestra naranjo"></i>Seguimiento meteorológico</span>
+<span><i class="muestra azul"></i>Extremo regional del día (no necesariamente crítico)</span>
 </div>
 </section>
-
-<section>
-<h2>Información del pronóstico</h2>
-<div class="info" id="actualizacion">
-Estado: versión inicial del panel, sin datos meteorológicos conectados.
-</div>
-<p class="info">
-Los indicadores meteorológicos son antecedentes para el análisis
-del potencial de comportamiento del fuego. No constituyen por sí
-solos una clasificación oficial de riesgo ni una recomendación de despacho.
-</p>
-</section>
+<section><h2>Aspectos meteorológicos de atención</h2><div id="resumen" class="aviso">Esperando conexión con datos meteorológicos.</div></section>
+<section><h2>Información del pronóstico</h2><div class="info" id="actualizacion">Cargando datos meteorológicos.</div>
+<p class="info">Los indicadores meteorológicos son antecedentes para el análisis del potencial de comportamiento del fuego. No constituyen por sí solos una clasificación oficial de riesgo ni una recomendación de despacho. Los umbrales visuales son exploratorios y deben validarse antes de su uso operacional.</p></section>
 </main>
-
 <script>
-
-const provincias = [
-  "Chacabuco", "Cordillera", "Maipo",
-  "Melipilla", "Santiago", "Talagante"
-];
-
+const provincias = ["Chacabuco", "Cordillera", "Maipo", "Melipilla", "Santiago", "Talagante"];
 let datos = null;
 let diaSeleccionado = 0;
 
+// Umbrales exploratorios de visualización, editables tras validación técnica.
+// Para HR: valores menores son más desfavorables. Para viento/racha/T°: mayores.
+const umbrales = {
+  temperatura: {naranjo: 30, rojo: 33},
+  humedad: {naranjo: 30, rojo: 20},
+  viento: {naranjo: 20, rojo: 30},
+  racha: {naranjo: 40, rojo: 60}
+};
+
 function cambiarDia(dia) {
   diaSeleccionado = dia;
-
   document.querySelectorAll("nav button").forEach((boton, i) => {
     boton.classList.toggle("activo", i === dia);
   });
-
   mostrarTabla();
 }
 
+function fechaLocal(fechaISO, desplazamiento) {
+  const fecha = new Date(fechaISO + "T12:00:00");
+  fecha.setDate(fecha.getDate() + desplazamiento);
+  return fecha;
+}
+function claveFecha(fecha) {
+  return [fecha.getFullYear(), String(fecha.getMonth() + 1).padStart(2, "0"), String(fecha.getDate()).padStart(2, "0")].join("-");
+}
+function valoresValidos(h, indices, variable) {
+  const serie = h[variable];
+  if (!Array.isArray(serie)) return [];
+  return indices.map(i => serie[i]).filter(v => typeof v === "number" && Number.isFinite(v));
+}
+function extremo(h, indices, variable, tipo) {
+  const valores = valoresValidos(h, indices, variable);
+  if (!valores.length) return null;
+  return tipo === "min" ? Math.min(...valores) : Math.max(...valores);
+}
+function claseCelda(variable, valor, extremoRegional) {
+  if (valor === null) return "sin-datos";
+  const limite = umbrales[variable];
+  if (variable === "humedad") {
+    if (valor < limite.rojo) return "nivel-rojo";
+    if (valor < limite.naranjo) return "nivel-naranjo";
+  } else {
+    if (valor >= limite.rojo) return "nivel-rojo";
+    if (valor >= limite.naranjo) return "nivel-naranjo";
+  }
+  if (extremoRegional !== null && Math.abs(valor - extremoRegional) < 0.0001) return "nivel-azul";
+  return "";
+}
+function formato(valor, decimales) {
+  return valor === null ? "—" : valor.toFixed(decimales);
+}
 function mostrarTabla() {
   const tabla = document.getElementById("tabla");
-
-  if (!datos) {
+  if (!datos || !Array.isArray(datos.puntos) || !datos.puntos.length) {
     tabla.innerHTML = '<tr><td colspan="6">Cargando pronóstico...</td></tr>';
     return;
   }
+  const primerPunto = datos.puntos.find(p => p.horarios && Array.isArray(p.horarios.time) && p.horarios.time.length);
+  if (!primerPunto) {
+    tabla.innerHTML = '<tr><td colspan="6">No hay registros horarios disponibles.</td></tr>';
+    return;
+  }
+  const fecha = fechaLocal(primerPunto.horarios.time[0].slice(0, 10), diaSeleccionado);
+  const fechaSeleccionada = claveFecha(fecha);
+  document.getElementById("titulo").textContent = "Condiciones meteorológicas · " +
+    fecha.toLocaleDateString("es-CL", {weekday:"long", day:"numeric", month:"long"});
 
-  const primeraFecha = datos.puntos[0].horarios.time[0].slice(0, 10);
-  const fecha = new Date(primeraFecha + "T12:00:00");
-  fecha.setDate(fecha.getDate() + diaSeleccionado);
-  const fechaSeleccionada = [
-    fecha.getFullYear(),
-    String(fecha.getMonth() + 1).padStart(2, "0"),
-    String(fecha.getDate()).padStart(2, "0")
-  ].join("-");
-
-  document.getElementById("titulo").textContent =
-    "Condiciones meteorológicas · " +
-    fecha.toLocaleDateString("es-CL", {
-      weekday: "long", day: "numeric", month: "long"
-    });
-
-  tabla.innerHTML = provincias.map(nombre => {
+  const filas = provincias.map(nombre => {
     const punto = datos.puntos.find(p => p.provincia === nombre);
-
-    if (!punto) {
-      return `<tr><td>${nombre}</td><td colspan="5">Sin datos</td></tr>`;
-    }
-
+    if (!punto || !punto.horarios || !Array.isArray(punto.horarios.time)) return {nombre, sinDatos:true};
     const h = punto.horarios;
-    const indices = h.time
-      .map((t, i) => t.startsWith(fechaSeleccionada) ? i : -1)
-      .filter(i => i >= 0);
-
-    if (!indices.length) {
-      return `<tr><td>${nombre}</td><td colspan="5">Sin pronóstico</td></tr>`;
-    }
-
-    const maximo = variable =>
-      Math.max(...indices.map(i => h[variable][i]).filter(Number.isFinite));
-
-    const minimo = variable =>
-      Math.min(...indices.map(i => h[variable][i]).filter(Number.isFinite));
-
-    const temperatura = maximo("temperature_2m");
-    const humedad = minimo("relative_humidity_2m");
-    const viento = maximo("wind_speed_10m");
-    const racha = maximo("wind_gusts_10m");
-
-    // Ventana orientativa: horas con HR <= 30% y viento >= 15 km/h.
-    // No equivale a una alerta oficial.
+    const indices = h.time.map((t,i) => t.startsWith(fechaSeleccionada) ? i : -1).filter(i => i >= 0);
+    if (!indices.length) return {nombre, sinDatos:true};
+    const temperatura = extremo(h, indices, "temperature_2m", "max");
+    const humedad = extremo(h, indices, "relative_humidity_2m", "min");
+    const viento = extremo(h, indices, "wind_speed_10m", "max");
+    const racha = extremo(h, indices, "wind_gusts_10m", "max");
     const horasAtencion = indices.filter(i =>
-      h.relative_humidity_2m[i] <= 30 &&
-      h.wind_speed_10m[i] >= 15
+      typeof h.relative_humidity_2m?.[i] === "number" && h.relative_humidity_2m[i] <= 30 &&
+      typeof h.wind_speed_10m?.[i] === "number" && h.wind_speed_10m[i] >= 15
     );
-
     const ventana = horasAtencion.length
-      ? horasAtencion.map(i => h.time[i].slice(11, 16)).join(", ")
+      ? horasAtencion.map(i => h.time[i].slice(11,16)).join(", ")
       : "Sin coincidencia de umbrales";
+    return {nombre, temperatura, humedad, viento, racha, ventana};
+  });
 
-    return `
-      <tr>
-        <td>${nombre}</td>
-        <td>${temperatura.toFixed(1)}</td>
-        <td>${humedad.toFixed(0)}</td>
-        <td>${viento.toFixed(1)}</td>
-        <td>${racha.toFixed(1)}</td>
-        <td>${ventana}</td>
-      </tr>
-    `;
-  }).join("");
-
-  document.getElementById("resumen").textContent =
-    "Los valores corresponden a puntos meteorológicos representativos " +
-    "de cada provincia. Las máximas y mínimas pueden ocurrir en horas diferentes. " +
-    "La ventana de atención utiliza umbrales exploratorios, no oficiales.";
+  const extremoRegional = (variable, tipo) => {
+    const valores = filas.map(f => f[variable]).filter(v => typeof v === "number" && Number.isFinite(v));
+    if (!valores.length) return null;
+    return tipo === "min" ? Math.min(...valores) : Math.max(...valores);
+  };
+  const regionales = {
+    temperatura: extremoRegional("temperatura", "max"),
+    humedad: extremoRegional("humedad", "min"),
+    viento: extremoRegional("viento", "max"),
+    racha: extremoRegional("racha", "max")
+  };
+  const celda = (variable, valor, decimales) =>
+    `<td class="${claseCelda(variable, valor, regionales[variable])}">${formato(valor, decimales)}</td>`;
+  tabla.innerHTML = filas.map(f => f.sinDatos
+    ? `<tr><td>${f.nombre}</td><td colspan="5" class="sin-datos">Sin pronóstico para este día</td></tr>`
+    : `<tr><td>${f.nombre}</td>${celda("temperatura",f.temperatura,1)}${celda("humedad",f.humedad,0)}${celda("viento",f.viento,1)}${celda("racha",f.racha,1)}<td>${f.ventana}</td></tr>`
+  ).join("");
+  const seguimiento = filas.filter(f => !f.sinDatos && ["temperatura","humedad","viento","racha"].some(v =>
+    ["nivel-rojo","nivel-naranjo"].includes(claseCelda(v, f[v], regionales[v]))
+  )).map(f => f.nombre);
+  document.getElementById("resumen").textContent = seguimiento.length
+    ? "Provincias con al menos un indicador en seguimiento según umbrales exploratorios: " + seguimiento.join(", ") + ". Los extremos de temperatura, humedad y viento pueden ocurrir a distintas horas; revisar la evolución horaria antes de emitir conclusiones operacionales."
+    : "No se superan los umbrales exploratorios de visualización en los puntos seleccionados. Esto no descarta condiciones locales relevantes ni equivale a ausencia de riesgo de incendios.";
 }
 
 async function cargarDatos() {
   try {
-    const respuesta = await fetch("./datos.json?t=" + Date.now(), {
-      cache: "no-store"
-    });
-
-    if (!respuesta.ok) {
-      throw new Error("HTTP " + respuesta.status);
-    }
-
+    const respuesta = await fetch("./datos.json?t=" + Date.now(), {cache:"no-store"});
+    if (!respuesta.ok) throw new Error("HTTP " + respuesta.status);
     datos = await respuesta.json();
-
     document.getElementById("actualizacion").textContent =
-      "Fuente: " + datos.fuente +
-      " · Modelo solicitado: " + datos.modelo_solicitado +
-      " · Última descarga: " +
-      new Date(datos.actualizado_utc).toLocaleString("es-CL", {
-        timeZone: "America/Santiago"
-      }) +
-      " (hora de Chile).";
-
+      "Fuente: " + datos.fuente + " · Modelo solicitado: " + datos.modelo_solicitado +
+      " · Última descarga: " + new Date(datos.actualizado_utc).toLocaleString("es-CL", {timeZone:"America/Santiago"}) +
+      " (hora de Chile). Datos correspondientes a un punto de pronóstico por provincia.";
     mostrarTabla();
-  } catch (error) {
-    document.getElementById("tabla").innerHTML =
-      '<tr><td colspan="6">No fue posible cargar los datos.</td></tr>';
-
-    document.getElementById("resumen").textContent =
-      "No hay datos disponibles para elaborar una síntesis.";
-
+  } catch(error) {
+    document.getElementById("tabla").innerHTML = '<tr><td colspan="6">No fue posible cargar los datos.</td></tr>';
+    document.getElementById("resumen").textContent = "No hay datos disponibles para elaborar una síntesis.";
+    document.getElementById("actualizacion").textContent = "Error al obtener el pronóstico.";
     console.error(error);
   }
 }
-
 cargarDatos();
-
 </script>
 </body>
 </html>
