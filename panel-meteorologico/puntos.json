@@ -1,0 +1,38 @@
+
+{
+  "region": "Metropolitana de Santiago",
+  "zona_horaria": "America/Santiago",
+  "fuente_referencia": "SpotWX - ECMWF IFS",
+  "puntos": [
+    {
+      "provincia": "Chacabuco",
+      "latitud": -33.30878,
+      "longitud": -70.72703
+    },
+    {
+      "provincia": "Cordillera",
+      "latitud": -33.69044,
+      "longitud": -70.49635
+    },
+    {
+      "provincia": "Maipo",
+      "latitud": -33.75897,
+      "longitud": -70.73948
+    },
+    {
+      "provincia": "Melipilla",
+      "latitud": -33.71672,
+      "longitud": -71.24629
+    },
+    {
+      "provincia": "Santiago",
+      "latitud": -33.44213,
+      "longitud": -70.52797
+    },
+    {
+      "provincia": "Talagante",
+      "latitud": -33.67078,
+      "longitud": -70.92216
+    }
+  ]
+}
