@@ -84,34 +84,139 @@ solos una clasificación oficial de riesgo ni una recomendación de despacho.
 </main>
 
 <script>
-const provincias=[
-"Chacabuco","Cordillera","Maipo",
-"Melipilla","Santiago","Talagante"
+
+const provincias = [
+  "Chacabuco", "Cordillera", "Maipo",
+  "Melipilla", "Santiago", "Talagante"
 ];
 
-function cambiarDia(dia){
- document.querySelectorAll("nav button").forEach((boton,i)=>{
-  boton.classList.toggle("activo",i===dia);
- });
- document.getElementById("titulo").textContent=
-  "Condiciones meteorológicas · Día "+(dia+1);
- mostrarTabla();
+let datos = null;
+let diaSeleccionado = 0;
+
+function cambiarDia(dia) {
+  diaSeleccionado = dia;
+
+  document.querySelectorAll("nav button").forEach((boton, i) => {
+    boton.classList.toggle("activo", i === dia);
+  });
+
+  mostrarTabla();
 }
 
-function mostrarTabla(){
- const tabla=document.getElementById("tabla");
- tabla.innerHTML=provincias.map(nombre=>`
- <tr>
- <td>${nombre}</td>
- <td class="sin-datos">—</td>
- <td class="sin-datos">—</td>
- <td class="sin-datos">—</td>
- <td class="sin-datos">—</td>
- <td class="sin-datos">Pendiente</td>
- </tr>`).join("");
+function mostrarTabla() {
+  const tabla = document.getElementById("tabla");
+
+  if (!datos) {
+    tabla.innerHTML = '<tr><td colspan="6">Cargando pronóstico...</td></tr>';
+    return;
+  }
+
+  const primeraFecha = datos.puntos[0].horarios.time[0].slice(0, 10);
+  const fecha = new Date(primeraFecha + "T12:00:00");
+  fecha.setDate(fecha.getDate() + diaSeleccionado);
+  const fechaSeleccionada = [
+    fecha.getFullYear(),
+    String(fecha.getMonth() + 1).padStart(2, "0"),
+    String(fecha.getDate()).padStart(2, "0")
+  ].join("-");
+
+  document.getElementById("titulo").textContent =
+    "Condiciones meteorológicas · " +
+    fecha.toLocaleDateString("es-CL", {
+      weekday: "long", day: "numeric", month: "long"
+    });
+
+  tabla.innerHTML = provincias.map(nombre => {
+    const punto = datos.puntos.find(p => p.provincia === nombre);
+
+    if (!punto) {
+      return `<tr><td>${nombre}</td><td colspan="5">Sin datos</td></tr>`;
+    }
+
+    const h = punto.horarios;
+    const indices = h.time
+      .map((t, i) => t.startsWith(fechaSeleccionada) ? i : -1)
+      .filter(i => i >= 0);
+
+    if (!indices.length) {
+      return `<tr><td>${nombre}</td><td colspan="5">Sin pronóstico</td></tr>`;
+    }
+
+    const maximo = variable =>
+      Math.max(...indices.map(i => h[variable][i]).filter(Number.isFinite));
+
+    const minimo = variable =>
+      Math.min(...indices.map(i => h[variable][i]).filter(Number.isFinite));
+
+    const temperatura = maximo("temperature_2m");
+    const humedad = minimo("relative_humidity_2m");
+    const viento = maximo("wind_speed_10m");
+    const racha = maximo("wind_gusts_10m");
+
+    // Ventana orientativa: horas con HR <= 30% y viento >= 15 km/h.
+    // No equivale a una alerta oficial.
+    const horasAtencion = indices.filter(i =>
+      h.relative_humidity_2m[i] <= 30 &&
+      h.wind_speed_10m[i] >= 15
+    );
+
+    const ventana = horasAtencion.length
+      ? horasAtencion.map(i => h.time[i].slice(11, 16)).join(", ")
+      : "Sin coincidencia de umbrales";
+
+    return `
+      <tr>
+        <td>${nombre}</td>
+        <td>${temperatura.toFixed(1)}</td>
+        <td>${humedad.toFixed(0)}</td>
+        <td>${viento.toFixed(1)}</td>
+        <td>${racha.toFixed(1)}</td>
+        <td>${ventana}</td>
+      </tr>
+    `;
+  }).join("");
+
+  document.getElementById("resumen").textContent =
+    "Los valores corresponden a puntos meteorológicos representativos " +
+    "de cada provincia. Las máximas y mínimas pueden ocurrir en horas diferentes. " +
+    "La ventana de atención utiliza umbrales exploratorios, no oficiales.";
 }
 
-mostrarTabla();
+async function cargarDatos() {
+  try {
+    const respuesta = await fetch("./datos.json?t=" + Date.now(), {
+      cache: "no-store"
+    });
+
+    if (!respuesta.ok) {
+      throw new Error("HTTP " + respuesta.status);
+    }
+
+    datos = await respuesta.json();
+
+    document.getElementById("actualizacion").textContent =
+      "Fuente: " + datos.fuente +
+      " · Modelo solicitado: " + datos.modelo_solicitado +
+      " · Última descarga: " +
+      new Date(datos.actualizado_utc).toLocaleString("es-CL", {
+        timeZone: "America/Santiago"
+      }) +
+      " (hora de Chile).";
+
+    mostrarTabla();
+  } catch (error) {
+    document.getElementById("tabla").innerHTML =
+      '<tr><td colspan="6">No fue posible cargar los datos.</td></tr>';
+
+    document.getElementById("resumen").textContent =
+      "No hay datos disponibles para elaborar una síntesis.";
+
+    console.error(error);
+  }
+}
+
+cargarDatos();
+
 </script>
 </body>
 </html>
