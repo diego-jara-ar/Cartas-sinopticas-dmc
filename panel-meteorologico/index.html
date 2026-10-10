@@ -83,6 +83,10 @@ td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
   <div style="height:360px;position:relative;margin-top:15px">
   <canvas id="grafico-horario"></canvas>
 </div>
+  <div id="ventanas-horarias" class="info"
+     style="margin-top:16px;padding:14px;background:#f0f5f9;border-radius:7px">
+  Analizando coincidencias horarias de humedad relativa y viento...
+</div>
 </section>
 <section><h2>Aspectos meteorológicos de atención</h2><div id="resumen" class="aviso">Esperando conexión con datos meteorológicos.</div></section>
 <section><h2>Información del pronóstico</h2><div class="info" id="actualizacion">Cargando datos meteorológicos.</div>
@@ -111,6 +115,7 @@ function cambiarDia(dia) {
 
   mostrarTabla();
   actualizarGrafico();
+  actualizarVentanasHorarias();
 }
 function fechaLocal(fechaISO, desplazamiento) {
   const fecha = new Date(fechaISO + "T12:00:00");
@@ -216,16 +221,18 @@ async function cargarDatos() {
       "Fuente: " + datos.fuente + " · Modelo solicitado: " + datos.modelo_solicitado +
       " · Última descarga: " + new Date(datos.actualizado_utc).toLocaleString("es-CL", {timeZone:"America/Santiago"}) +
       " (hora de Chile). Datos correspondientes a un punto de pronóstico por provincia.";
-      mostrarTabla();
+    mostrarTabla();
     actualizarGrafico();
+    actualizarVentanasHorarias();
   } catch(error) {
     document.getElementById("tabla").innerHTML = '<tr><td colspan="6">No fue posible cargar los datos.</td></tr>';
     document.getElementById("resumen").textContent = "No hay datos disponibles para elaborar una síntesis.";
     document.getElementById("actualizacion").textContent = "Error al obtener el pronóstico.";
+    document.getElementById("ventanas-horarias").textContent = "No fue posible analizar las coincidencias horarias.";
     console.error(error);
   }
 }
-  
+
 let variableSeleccionada = "temperature_2m";
 let graficoComparativo = null;
 
@@ -378,7 +385,73 @@ function actualizarGrafico() {
   });
 }
 
+function actualizarVentanasHorarias() {
+  const contenedor = document.getElementById("ventanas-horarias");
+
+  if (!contenedor || !datos || !Array.isArray(datos.puntos)) return;
+
+  const primerPunto = datos.puntos.find(p =>
+    p.horarios && Array.isArray(p.horarios.time) && p.horarios.time.length
+  );
+
+  if (!primerPunto) {
+    contenedor.textContent = "No hay datos horarios disponibles.";
+    return;
+  }
+
+  const fecha = fechaLocal(
+    primerPunto.horarios.time[0].slice(0, 10),
+    diaSeleccionado
+  );
+
+  const fechaSeleccionada = claveFecha(fecha);
+
+  const resultados = provincias.map(nombre => {
+    const punto = datos.puntos.find(p => p.provincia === nombre);
+    if (!punto || !punto.horarios) return null;
+
+    const h = punto.horarios;
+
+    const horas = h.time
+      .map((tiempo, i) => {
+        if (!tiempo.startsWith(fechaSeleccionada)) return null;
+
+        const hr = h.relative_humidity_2m?.[i];
+        const viento = h.wind_speed_10m?.[i];
+
+        if (
+          Number.isFinite(hr) &&
+          Number.isFinite(viento) &&
+          hr <= 30 &&
+          viento >= 15
+        ) {
+          return tiempo.slice(11, 16);
+        }
+
+        return null;
+      })
+      .filter(Boolean);
+
+    return horas.length
+      ? nombre + ": " + horas.join(", ")
+      : null;
+  }).filter(Boolean);
+
+  if (resultados.length) {
+    contenedor.textContent =
+      "VENTANAS METEOROLÓGICAS DE ATENCIÓN | " +
+      resultados.join(" · ") +
+      ". Coincidencia horaria de HR ≤ 30 % y viento sostenido ≥ 15 km/h.";
+  } else {
+    contenedor.textContent =
+      "Sin coincidencias horarias de HR ≤ 30 % y viento sostenido ≥ 15 km/h " +
+      "en los seis puntos provinciales para el día seleccionado. " +
+      "Esto no descarta condiciones locales relevantes ni implica ausencia de riesgo.";
+  }
+}
+
 cargarDatos();
 </script>
 </body>
 </html>
+
