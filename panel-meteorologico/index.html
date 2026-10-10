@@ -33,6 +33,7 @@ td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
 .muestra.rojo{background:#fce8e6}.muestra.naranjo{background:#fff0d8}.muestra.azul{background:#e5f1fc}
 @media(max-width:700px){main{padding:8px}h1{font-size:18px}section{padding:10px;overflow-x:auto}table{font-size:12px;min-width:650px}th,td{padding:10px 5px}}
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <main>
@@ -56,6 +57,32 @@ td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
 <span><i class="muestra naranjo"></i>Seguimiento meteorológico</span>
 <span><i class="muestra azul"></i>Extremo regional del día (no necesariamente crítico)</span>
 </div>
+</section><section>
+  <h2>Evolución meteorológica horaria · Comparación provincial</h2>
+
+  <div class="info">
+    Selecciona una variable para comparar las seis provincias
+    de la Región Metropolitana durante el día elegido.
+  </div>
+
+  <nav id="variables">
+    <button class="activo" onclick="cambiarVariable('temperature_2m')">
+      Temperatura
+    </button>
+    <button onclick="cambiarVariable('relative_humidity_2m')">
+      Humedad relativa
+    </button>
+    <button onclick="cambiarVariable('wind_speed_10m')">
+      Viento
+    </button>
+    <button onclick="cambiarVariable('wind_gusts_10m')">
+      Rachas
+    </button>
+  </nav>
+
+  <div style="height:360px;position:relative;margin-top:15px">
+  <canvas id="grafico-horario"></canvas>
+</div>
 </section>
 <section><h2>Aspectos meteorológicos de atención</h2><div id="resumen" class="aviso">Esperando conexión con datos meteorológicos.</div></section>
 <section><h2>Información del pronóstico</h2><div class="info" id="actualizacion">Cargando datos meteorológicos.</div>
@@ -77,12 +104,14 @@ const umbrales = {
 
 function cambiarDia(dia) {
   diaSeleccionado = dia;
-  document.querySelectorAll("nav button").forEach((boton, i) => {
+
+  document.querySelectorAll("body > main > nav button").forEach((boton, i) => {
     boton.classList.toggle("activo", i === dia);
   });
-  mostrarTabla();
-}
 
+  mostrarTabla();
+  actualizarGrafico();
+}
 function fechaLocal(fechaISO, desplazamiento) {
   const fecha = new Date(fechaISO + "T12:00:00");
   fecha.setDate(fecha.getDate() + desplazamiento);
@@ -187,7 +216,8 @@ async function cargarDatos() {
       "Fuente: " + datos.fuente + " · Modelo solicitado: " + datos.modelo_solicitado +
       " · Última descarga: " + new Date(datos.actualizado_utc).toLocaleString("es-CL", {timeZone:"America/Santiago"}) +
       " (hora de Chile). Datos correspondientes a un punto de pronóstico por provincia.";
-    mostrarTabla();
+      mostrarTabla();
+    actualizarGrafico();
   } catch(error) {
     document.getElementById("tabla").innerHTML = '<tr><td colspan="6">No fue posible cargar los datos.</td></tr>';
     document.getElementById("resumen").textContent = "No hay datos disponibles para elaborar una síntesis.";
@@ -195,6 +225,159 @@ async function cargarDatos() {
     console.error(error);
   }
 }
+  
+let variableSeleccionada = "temperature_2m";
+let graficoComparativo = null;
+
+const configuracionVariables = {
+  temperature_2m: {
+    nombre: "Temperatura",
+    unidad: "°C"
+  },
+  relative_humidity_2m: {
+    nombre: "Humedad relativa",
+    unidad: "%"
+  },
+  wind_speed_10m: {
+    nombre: "Viento sostenido",
+    unidad: "km/h"
+  },
+  wind_gusts_10m: {
+    nombre: "Rachas de viento",
+    unidad: "km/h"
+  }
+};
+
+const coloresProvincias = [
+  "#1565C0",
+  "#D32F2F",
+  "#2E7D32",
+  "#EF6C00",
+  "#7B1FA2",
+  "#00838F"
+];
+
+function cambiarVariable(variable) {
+  variableSeleccionada = variable;
+
+  document.querySelectorAll("#variables button").forEach(boton => {
+    boton.classList.toggle(
+      "activo",
+      boton.getAttribute("onclick").includes("'" + variable + "'")
+    );
+  });
+
+  actualizarGrafico();
+}
+
+function actualizarGrafico() {
+  if (!datos || typeof Chart === "undefined") return;
+
+  const canvas = document.getElementById("grafico-horario");
+  if (!canvas) return;
+
+  const fechaInicial = datos.puntos[0].horarios.time[0].slice(0, 10);
+  const fecha = new Date(fechaInicial + "T12:00:00");
+  fecha.setDate(fecha.getDate() + diaSeleccionado);
+
+  const fechaSeleccionada = [
+    fecha.getFullYear(),
+    String(fecha.getMonth() + 1).padStart(2, "0"),
+    String(fecha.getDate()).padStart(2, "0")
+  ].join("-");
+
+  const puntoBase = datos.puntos[0];
+  const indices = puntoBase.horarios.time
+    .map((hora, i) => hora.startsWith(fechaSeleccionada) ? i : -1)
+    .filter(i => i >= 0);
+
+  const etiquetas = indices.map(i =>
+    puntoBase.horarios.time[i].slice(11, 16)
+  );
+
+  const series = provincias.map((nombre, posicion) => {
+    const punto = datos.puntos.find(p => p.provincia === nombre);
+
+    const valores = etiquetas.map(hora => {
+      if (!punto) return null;
+
+      const indice = punto.horarios.time.indexOf(
+        fechaSeleccionada + "T" + hora
+      );
+
+      if (indice < 0) return null;
+
+      const valor = punto.horarios[variableSeleccionada]?.[indice];
+      return Number.isFinite(valor) ? valor : null;
+    });
+
+    return {
+      label: nombre,
+      data: valores,
+      borderColor: coloresProvincias[posicion],
+      backgroundColor: coloresProvincias[posicion],
+      borderWidth: 2.5,
+      pointRadius: 1.5,
+      pointHoverRadius: 5,
+      tension: 0.25,
+      spanGaps: false
+    };
+  });
+
+  if (graficoComparativo) {
+    graficoComparativo.destroy();
+  }
+
+  const configuracion = configuracionVariables[variableSeleccionada];
+
+  graficoComparativo = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels: etiquetas,
+      datasets: series
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            usePointStyle: true,
+            boxWidth: 10
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: contexto =>
+              contexto.dataset.label + ": " +
+              contexto.parsed.y + " " + configuracion.unidad
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: "Hora local de Chile"
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: configuracion.nombre +
+              " (" + configuracion.unidad + ")"
+          }
+        }
+      }
+    }
+  });
+}
+
 cargarDatos();
 </script>
 </body>
