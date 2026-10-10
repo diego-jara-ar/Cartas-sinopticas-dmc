@@ -42,7 +42,7 @@ td.nivel-azul{background:#e5f1fc;color:#155a8a;font-weight:bold}
 .matriz-viento thead th:first-child{background:#eaf2f8;z-index:3}
 .viento-celda{display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
 .viento-flecha{display:inline-block;font-size:23px;line-height:25px;color:#18769d;transform-origin:center center}
-.viento-grados{font-size:11px;color:#526b7c}
+.viento-grados{font-size:12px;color:#17324d;font-weight:700}
 .matriz-viento td.viento-moderado{background:#fff5df}
 .matriz-viento td.viento-fuerte{background:#fce8e6}
 .matriz-viento td.viento-moderado:first-child,.matriz-viento td.viento-fuerte:first-child{background:#fff}
@@ -480,6 +480,12 @@ function actualizarVentanasHorarias() {
 }
 
 
+function siglaDireccion(grados) {
+  const puntos = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+  const indice = Math.floor((((grados % 360) + 360) % 360 + 22.5) / 45) % 8;
+  return puntos[indice];
+}
+
 function actualizarDireccionViento() {
   const cabecera = document.getElementById("viento-direccion-cabecera");
   const cuerpo = document.getElementById("viento-direccion-cuerpo");
@@ -537,10 +543,10 @@ function actualizarDireccionViento() {
         flecha.style.transform = `rotate(${(direccion + 180) % 360}deg)`;
         const grados = document.createElement("span");
         grados.className = "viento-grados";
-        grados.textContent = `${Math.round(direccion)}°`;
+        grados.textContent = siglaDireccion(direccion);
         caja.append(flecha, grados);
         td.appendChild(caja);
-        td.title = `${nombre}, ${t.slice(11, 16)}: viento desde ${Math.round(direccion)}°` +
+        td.title = `${nombre}, ${t.slice(11, 16)}: viento desde ${siglaDireccion(direccion)} (${Math.round(direccion)}°)` +
           (Number.isFinite(velocidad) ? `, velocidad ${velocidad.toFixed(1)} km/h` : "");
       } else {
         td.textContent = "—";
