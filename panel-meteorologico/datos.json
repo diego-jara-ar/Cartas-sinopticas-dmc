@@ -2,7 +2,7 @@
   "fuente": "Open-Meteo",
   "modelo_solicitado": "ECMWF IFS",
   "zona_horaria": "America/Santiago",
-  "actualizado_utc": "2026-10-13T12:49:53.806224+00:00",
+  "actualizado_utc": "2026-10-13T18:47:56.210598+00:00",
   "puntos": [
     {
       "provincia": "Chacabuco",
