@@ -1,13 +1,13 @@
 {
-  "emision": "20261014 00:00 UTC",
-  "archivo_carta": "carta_sinoptica_20261014-00UTC.jpg",
+  "emision": "20261014 12:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261014-12UTC.jpg",
   "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
   "zonas": {
-    "Zona norte": "Bajas presiones en superficie y Corriente en chorro",
-    "Zona centro": "Inestabilidad atmosférica y Tormentas eléctricas",
-    "Zona sur": "Inestabilidad atmosférica y Tormentas eléctricas",
+    "Zona norte": "Corriente en chorro y Bajas presiones en superficie",
+    "Zona centro": "Aproximación de un frente ocluido",
+    "Zona sur": "Inestabilidad atmosférica",
     "Zona austral": "Altas presiones",
-    "Archipiélago Juan Fernández": "Altas presiones",
-    "Isla de Pascua": "Inestabilidad atmosférica y Corriente en chorro"
+    "Archipiélago Juan Fernández": "Inestabilidad post frontal",
+    "Isla de Pascua": "Altas presiones"
   }
 }
