@@ -1,0 +1,13 @@
+{
+  "emision": "20261015 12:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261015-12UTC.jpg",
+  "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
+  "zonas": {
+    "Zona norte": "Bajas presiones en superficie y Corriente en chorro",
+    "Zona centro": "Altas presiones y Vaguada en altura",
+    "Zona sur": "Altas presiones, Vaguada en altura y Dorsal en altura",
+    "Zona austral": "Altas presiones y Dorsal en altura",
+    "Archipiélago Juan Fernández": "Altas presiones",
+    "Isla de Pascua": "Altas presiones y Corriente en chorro"
+  }
+}
