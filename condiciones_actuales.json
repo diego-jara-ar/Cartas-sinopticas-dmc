@@ -1,12 +1,12 @@
 {
-  "emision": "20261016 00:00 UTC",
-  "archivo_carta": "carta_sinoptica_20261016-00UTC.jpg",
+  "emision": "20261016 12:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261016-12UTC.jpg",
   "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
   "zonas": {
     "Zona norte": "Bajas presiones en superficie y Corriente en chorro",
-    "Zona centro": "Altas presiones, Flujo de retorno por acción baja segregada y Tormentas eléctricas",
-    "Zona sur": "Flujo de retorno por acción baja segregada, Tormentas eléctricas y Altas presiones",
-    "Zona austral": "Altas presiones y Alta de bloqueo",
+    "Zona centro": "Altas presiones y Corriente en chorro",
+    "Zona sur": "Altas presiones",
+    "Zona austral": "Altas presiones",
     "Archipiélago Juan Fernández": "Altas presiones",
     "Isla de Pascua": "Altas presiones"
   }
