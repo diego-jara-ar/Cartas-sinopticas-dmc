@@ -1,0 +1,13 @@
+{
+  "emision": "20261018 12:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261018-12UTC.jpg",
+  "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
+  "zonas": {
+    "Zona norte": "Corriente en chorro y Bajas presiones en superficie",
+    "Zona centro": "Bajas presiones en superficie",
+    "Zona sur": "Aproximación de un frente frío",
+    "Zona austral": "Inestabilidad atmosférica",
+    "Archipiélago Juan Fernández": "Altas presiones",
+    "Isla de Pascua": "Altas presiones"
+  }
+}
