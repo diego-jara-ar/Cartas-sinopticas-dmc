@@ -1,13 +1,13 @@
 {
-  "emision": "20261023 12:00 UTC",
-  "archivo_carta": "carta_sinoptica_20261023-12UTC.jpg",
+  "emision": "20261024 00:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261024-00UTC.jpg",
   "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
   "zonas": {
     "Zona norte": "Bajas presiones en superficie",
-    "Zona centro": "Corriente en chorro, Presencia de un frente ocluido, Borde de ataque de baja segregada y Plegamiento de tropopausa",
-    "Zona sur": "Bajas presiones en superficie, Plegamiento de tropopausa y Presencia de un frente ocluido",
-    "Zona austral": "Altas presiones",
-    "Archipiélago Juan Fernández": "Bajas presiones en superficie y Presencia de un frente ocluido",
+    "Zona centro": "Baja segregada, Tormentas eléctricas, Plegamiento de tropopausa y Corriente en chorro",
+    "Zona sur": "Altas presiones",
+    "Zona austral": "Altas presiones y Alta de bloqueo",
+    "Archipiélago Juan Fernández": "Altas presiones",
     "Isla de Pascua": "Altas presiones"
   }
 }
