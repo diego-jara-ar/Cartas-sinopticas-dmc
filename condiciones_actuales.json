@@ -1,0 +1,13 @@
+{
+  "emision": "20261028 00:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261028-00UTC.jpg",
+  "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
+  "zonas": {
+    "Zona norte": "Bajas presiones en superficie, Corriente en chorro, Altas presiones y Vaguada en altura",
+    "Zona centro": "Altas presiones y Vaguada en altura",
+    "Zona sur": "Altas presiones y Dorsal en altura",
+    "Zona austral": "Altas presiones y Corriente en chorro",
+    "Archipiélago Juan Fernández": "Altas presiones",
+    "Isla de Pascua": "Aproximación de un frente frío"
+  }
+}
