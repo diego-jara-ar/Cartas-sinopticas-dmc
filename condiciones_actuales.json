@@ -1,13 +1,13 @@
 {
-  "emision": "20261029 00:00 UTC",
-  "archivo_carta": "carta_sinoptica_20261029-00UTC.jpg",
+  "emision": "20261029 12:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261029-12UTC.jpg",
   "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
   "zonas": {
     "Zona norte": "Bajas presiones en superficie",
     "Zona centro": "Baja térmica",
-    "Zona sur": "Aproximación de un frente frío",
-    "Zona austral": "Altas presiones",
+    "Zona sur": "Bajas presiones en superficie y Aproximación de un frente frío",
+    "Zona austral": "Presencia de un frente frío, Río atmosférico y Corriente en chorro",
     "Archipiélago Juan Fernández": "Altas presiones",
-    "Isla de Pascua": "Altas presiones"
+    "Isla de Pascua": "Altas presiones y Corriente en chorro"
   }
 }
