@@ -1,0 +1,13 @@
+{
+  "emision": "20261031 12:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261031-12UTC.jpg",
+  "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
+  "zonas": {
+    "Zona norte": "Bajas presiones en superficie y Corriente en chorro",
+    "Zona centro": "Bajas presiones en superficie y Aproximación de vaguada en altura",
+    "Zona sur": "Altas presiones y Aproximación de vaguada en altura",
+    "Zona austral": "Presencia de un frente frío y Vaguada en altura",
+    "Archipiélago Juan Fernández": "Altas presiones",
+    "Isla de Pascua": "Altas presiones y Corriente en chorro"
+  }
+}
