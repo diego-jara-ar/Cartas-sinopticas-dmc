@@ -1,13 +1,13 @@
 {
-  "emision": "20261113 12:00 UTC",
-  "archivo_carta": "carta_sinoptica_20261113-12UTC.jpg",
+  "emision": "20261114 00:00 UTC",
+  "archivo_carta": "carta_sinoptica_20261114-00UTC.jpg",
   "fuente": "https://archivos.meteochile.gob.cl/portaldmc/cartaSinoptica/vercarta.php",
   "zonas": {
     "Zona norte": "Bajas presiones en superficie",
     "Zona centro": "Baja térmica y Corriente en chorro",
-    "Zona sur": "Altas presiones y Corriente en chorro",
-    "Zona austral": "Aproximación de un sistema frontal, Río atmosférico y Corriente en chorro",
-    "Archipiélago Juan Fernández": "Altas presiones y Corriente en chorro",
-    "Isla de Pascua": "Aproximación de un sistema frontal, Río atmosférico y Corriente en chorro"
+    "Zona sur": "Altas presiones",
+    "Zona austral": "Altas presiones y Corriente en chorro",
+    "Archipiélago Juan Fernández": "Altas presiones",
+    "Isla de Pascua": "Aproximación de un frente frío y Río atmosférico"
   }
 }
