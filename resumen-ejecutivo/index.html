@@ -42,18 +42,91 @@ a{color:#2567a0} .hidden{display:none!important}
  .hero,.notice,.metric,.day,.reading,.note,.footer,tr{break-inside:avoid-page!important;page-break-inside:avoid!important}
  .metrics,.days{break-inside:avoid-page!important}
 }
+.action-editor{background:white;border:1px solid var(--line);border-radius:15px;padding:18px 24px;margin-bottom:18px}
+.action-editor h3,.prevention-grid h4{margin:0 0 10px}
+.action-fields{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:10px 0}
+.action-editor input:not([type=checkbox]),.action-editor textarea,.action-editor select{font:inherit;padding:8px;border-radius:6px;border:1px solid #bccbd8;background:white;max-width:100%;min-width:0;width:100%}
+.action-editor label{margin-bottom:3px}
+.action-row{display:grid;grid-template-columns:1fr 1fr 1.5fr 2fr auto;gap:8px;align-items:end;margin:10px 0}
+.action-row button{padding:8px 10px}
+.action-check{padding:8px 0}
+#routeChoices{margin:14px 0;padding:12px;background:#f3f6f9;border-radius:8px}
+.route-option input{width:auto!important}
+.route-option{display:inline-block;margin:5px 0}
+.route-group{max-height:15rem;overflow:auto;border:1px solid var(--line);margin:8px 0;padding:7px 12px}
+.actions-table td,.actions-table th{text-align:left!important}
+.prevention-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.prevention-grid ul{margin:0;padding-left:1.3em}
+.prevention-grid li+li{margin-top:6px}
+#actionsBody .note + .note{margin-top:10px}
+@media(max-width:780px){.action-row{grid-template-columns:1fr 1fr}.prevention-grid{grid-template-columns:1fr}}
+@media print{.action-editor{display:none!important}.prevention-grid{grid-template-columns:1fr 1fr!important}.prevention-grid .note{break-inside:avoid-page}}
 </style></head><body><div class="wrap">
 <div class="tools" id="tools"><div><label for="region">Región / modalidad</label><select id="region"><option value="Metropolitana">Región Metropolitana · OPERATIVO</option><option value="Tarapacá">Tarapacá · PRUEBA</option></select></div>
-<button class="primary" id="refresh">Actualizar desde CONAF</button><button id="png">Descargar PNG</button><button id="pdf">Guardar PDF</button><span id="status">Presiona «Actualizar desde CONAF».</span></div>
+<button class="primary" id="refresh">Actualizar desde CONAF</button><button id="png">Descargar PNG</button><button id="pdf">Guardar PDF</button><button id="editActions" aria-expanded="false" aria-controls="actionEditor">Acciones CONAF</button><span id="status">Presiona «Actualizar desde CONAF».</span></div>
+<section class="action-editor hidden" id="actionEditor" aria-label="Programación preventiva CONAF">
+ <h3>Acciones CONAF</h3>
+ <form id="planForm">
+  <div class="action-fields">
+   <div><label for="planDate">Fecha de programación</label><input id="planDate" type="date" required></div>
+   <div><label for="planStart">Hora de inicio</label><input id="planStart" type="time"></div>
+  </div>
+  <p class="sub">Registra una fila por brigada. Si una brigada tiene dos recorridos, inclúyelos en el detalle de la misma fila.</p>
+  <div id="planRows"></div>
+  <div class="action-fields">
+   <button id="addAssignment" type="button">Agregar brigada</button>
+   <button id="suggestRoutes" type="button">Consultar rutas de ArcGIS</button>
+   <a href="https://experience.arcgis.com/experience/b030049fb4bc4bec868d94c335193fd4/" target="_blank" rel="noopener">Abrir mapa operativo ↗</a>
+  </div>
+  <div id="routeChoices" class="hidden"></div>
+  <label for="otherActions">Otras acciones programadas</label>
+  <textarea id="otherActions" rows="2" maxlength="500" placeholder="Ej. Refuerzo de vigilancia en sectores de interfaz"></textarea>
+  <label class="action-check"><input type="checkbox" id="planDetail"> Incluir brigadas y detalle de recorridos o puntos de stand by en PDF y PNG</label>
+  <div class="action-fields">
+   <button class="primary" type="submit" id="applyPlan">Aplicar al informe</button>
+   <button id="importPlan" type="button">Importar programación</button>
+   <button id="exportPlan" type="button">Descargar programación</button>
+   <input type="file" id="planFile" accept=".json,application/json" class="hidden">
+  </div>
+  <p class="sub" id="planStatus" role="status">La programación se guarda en este navegador. Puedes intercambiarla como archivo JSON.</p>
+ </form>
+</section>
 <article class="report" id="report"><header class="hero"><div class="eyebrow">CONAF · ANÁLISIS TERRITORIAL · BOTÓN ROJO</div><h1>RESUMEN EJECUTIVO · BOTÓN ROJO</h1><h2 id="heading">REGIÓN METROPOLITANA</h2><p id="validity">Validez: —</p><span class="tag hidden" id="testtag">PRUEBA · NO DISTRIBUIR</span></header>
 <div class="content"><div class="notice" id="notice">Pendiente de actualización desde la fuente oficial.</div>
 <div class="metrics"><div class="metric">Días con registros BR<b id="mDays">—</b></div><div class="metric">Comunas con BR en el período<b id="mCom">—</b></div><div class="metric">Persistencia · 3 días<b id="mPersist">—</b></div></div>
 <h3>Evolución territorial de tres días</h3><div class="days" id="days"></div>
 <h3>Lectura ejecutiva para autoridades</h3><div class="reading" id="reading">Actualiza los datos para generar el análisis.</div>
+<section id="actionsReport" class="hidden">
+ <h3>Acciones preventivas programadas · CONAF RM</h3>
+ <div id="actionsBody"></div>
+</section>
 <h3>Persistencia territorial · síntesis por comuna</h3><p class="sub">Una fila por comuna. Cada fecha muestra la categoría máxima de horas con Botón Rojo registrada para esa comuna. Para el detalle cartográfico consulta el <a href="https://www.arcgis.com/apps/dashboards/41ee3c691359437aa9df2a09d7f6124e" target="_blank" rel="noopener">Dashboard oficial de CONAF ↗</a>.</p>
 <div class="tablewrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
 <div class="legend">🟨 1–2 h &nbsp; 🟧 3–4 h &nbsp; 🟥 5 h o más &nbsp; — Sin registro BR. Los colores indican duración, no severidad.</div>
 <h3>Consideraciones para la coordinación preventiva</h3><div class="note" id="preventive">Actualiza los datos para visualizar las consideraciones correspondientes al período.</div>
+<section id="preventionRM">
+ <h3>Recomendaciones preventivas</h3>
+ <p class="sub" id="preventionScope"></p>
+ <div class="prevention-grid">
+  <section class="note">
+   <h4>Personal municipal</h4>
+   <ul>
+    <li>Difundir mensajes preventivos por localidad con juntas de vecinos y canales municipales, indicando la fecha y los sectores informados.</li>
+    <li>Focalizar la vigilancia municipal en sectores de interfaz, caminos de acceso y áreas de uso recreativo cercanas a vegetación. Coordinar los recorridos con CONAF según disponibilidad.</li>
+    <li>Revisar accesos y vías de evacuación del plan comunal. Si entra un aviso de humo o fuego, registrar la ubicación y un punto de referencia para comunicarlo a CONAF al <b>130</b>.</li>
+   </ul>
+  </section>
+  <section class="note">
+   <h4>Comunidades</h4>
+   <ul>
+    <li>Evitar quemas, fogatas y trabajos que generen chispas cerca de vegetación.</li>
+    <li>Mantener despejado el entorno de viviendas y accesos. Programar la mantención de cortafuegos existentes en condiciones seguras, fuera de los períodos críticos.</li>
+    <li>Si ves humo o fuego, llama al <b>130</b> e indica la localidad, el camino y un punto de referencia.</li>
+   </ul>
+  </section>
+ </div>
+ <p class="small">Referencias de prevención <a href="https://www.conaf.cl/incendios/prevencion-y-mitigacion/comunidades-preparadas-frente-a-los-incendios-forestales/">CONAF</a> y <a href="https://www.senapred.cl/incendios-forestales/">SENAPRED</a>.</p>
+</section>
 <p class="small" style="background:#f3f6f9;padding:15px;border-radius:8px"><b>Alcance y limitaciones.</b> Los registros provienen de la capa pública «Boton_Rojo» de CONAF. El campo «horas» representa una categoría de duración y «SUM_br_ha» su superficie asociada. La superficie regional diaria es la suma de SUM_br_ha de los registros correspondientes a esa región y fecha. No sumar superficies de días distintos como hectáreas únicas. Una respuesta vacía no se considera ausencia confirmada de Botón Rojo si la fuente no contiene datos vigentes para las fechas consultadas. La información debe validarse antes de su distribución institucional.</p>
 <footer class="footer"><div><b>Identificación institucional propuesta, sujeta a autorización:</b> Unidad de Análisis y Predicción de Incendios Forestales · Región Metropolitana · CONAF</div><div id="source">Fuente territorial: CONAF · Botón Rojo, ArcGIS FeatureServer</div><div id="disclaimer"></div></footer>
 </div></article></div>
@@ -128,17 +201,305 @@ function render(region,dates,all){
  status(`Consulta correcta · ${records.length} registros de ${region} · ${all.length} registros en la fuente para las fechas`);
 }
 async function update(){
+ regionalDates=dates3();officialRecords=null;clearRoutes();renderPlans();renderPrevention(regionalDates,null);
  const button=$('refresh');button.disabled=true;status('Consultando fuente oficial de CONAF…');
- try{const dates=dates3();const all=await queryAll(dates);render($('region').value,dates,all);$('report').removeAttribute('data-stale')}
+ try{const dates=regionalDates;const all=await queryAll(dates);officialRecords=all;clearRoutes();render($('region').value,dates,all);renderPrevention(dates,all);$('report').removeAttribute('data-stale')}
  catch(e){status('Error: '+e.message);$('notice').textContent='DATOS NO DISPONIBLES · No es posible confirmar presencia ni ausencia de Botón Rojo. Reintentar la consulta.';$('reading').textContent='La consulta falló. Los resultados anteriores, si los hubo, no deben utilizarse como información vigente.';$('preventive').textContent='Sin información verificable. Reintentar la consulta antes de comunicar resultados.';$('source').textContent='Fuente territorial: CONAF · Botón Rojo, ArcGIS FeatureServer · Última consulta fallida: '+new Date().toLocaleString('es-CL',{timeZone:'America/Santiago'});$('report').setAttribute('data-stale','true')}
  finally{button.disabled=false}
 }
-$('refresh').onclick=update;$('region').onchange=update;
+$('refresh').onclick=update;$('region').onchange=()=>{if(!$('refresh').disabled) update();else renderPlans()};
 $('pdf').onclick=()=>window.print();
 $('png').onclick=async()=>{const b=$('png');b.disabled=true;try{
  if(!window.html2canvas){await new Promise((resolve,reject)=>{let s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
  const canvas=await html2canvas($('report'),{backgroundColor:'#ffffff',scale:2,useCORS:true,windowWidth:Math.max(document.documentElement.clientWidth,1250)});
  const a=document.createElement('a');a.download='resumen_ejecutivo_boton_rojo.png';a.href=canvas.toDataURL('image/png');a.click()
  }catch(e){alert('No se pudo generar PNG: '+e.message)}finally{b.disabled=false}};
+const ROUTE_SERVICE = 'https://services5.arcgis.com/A1ELWse9bRAi2JiV/arcgis/rest/services/Rutas_patrullaje_metro/FeatureServer/0/query';
+const PLAN_STORAGE = 'boton-rojo-rm-planes-v1';
+const planModes = { patrullaje: 'Patrullaje', standby: 'Stand by' };
+const plans = new Map();
+let regionalDates = dates3();
+let officialRecords = null;
+let routeRequest = 0;
+let nextAssignment = 0;
+
+function validPlanDate(date) {
+ if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+ const value = new Date(date + 'T12:00:00Z');
+ return !Number.isNaN(+value) && value.toISOString().slice(0, 10) === date;
+}
+
+function validatePlan(plan) {
+ if (!plan || plan.version !== 1 || !validPlanDate(plan.date) ||
+     typeof plan.start !== 'string' || (plan.start && !/^([01]\d|2[0-3]):[0-5]\d$/.test(plan.start)) ||
+     typeof plan.other !== 'string' || plan.other.length > 500 ||
+     !Array.isArray(plan.assignments) || plan.assignments.length > 100) {
+  throw Error('El archivo o la fecha de la programación no tienen un formato válido.');
+ }
+ const seen = new Set();
+ const fields = { unit: 45, sector: 120, detail: 260 };
+ const assignments = plan.assignments.map(row => {
+  if (!row || !Object.hasOwn(planModes, row.mode) ||
+      Object.entries(fields).some(([key, max]) => typeof row[key] !== 'string' || row[key].length > max) ||
+      !row.unit.trim() || !row.sector.trim()) {
+   throw Error('Completa la brigada y el sector de cada asignación.');
+  }
+  const unit = row.unit.trim().replace(/\s+/g, ' ');
+  const key = unit.toLocaleLowerCase('es-CL');
+  if (seen.has(key)) throw Error('La brigada ' + unit + ' figura dos veces. Reúne sus recorridos en la misma fila.');
+  seen.add(key);
+  return { unit, mode: row.mode, sector: row.sector.trim(), detail: row.detail.trim() };
+ });
+ return { version: 1, date: plan.date, start: plan.start, other: plan.other.trim(), assignments };
+}
+
+function planMessage(text) { $('planStatus').textContent = text; }
+
+function addAssignment(row = { unit: '', mode: 'patrullaje', sector: '', detail: '' }) {
+ const parent = $('planRows');
+ if (parent.children.length >= 100) { planMessage('La programación admite hasta 100 asignaciones.'); return; }
+ const id = ++nextAssignment;
+ const element = document.createElement('div');
+ element.className = 'action-row';
+ element.innerHTML = `
+  <div><label for="unit-${id}">Brigada</label><input id="unit-${id}" data-field="unit" maxlength="45" required></div>
+  <div><label for="mode-${id}">Acción</label><select id="mode-${id}" data-field="mode"><option value="patrullaje">Patrullaje</option><option value="standby">Stand by</option></select></div>
+  <div><label for="sector-${id}">Sector para el resumen</label><input id="sector-${id}" data-field="sector" maxlength="120" required></div>
+  <div><label for="detail-${id}">Recorrido o punto específico</label><input id="detail-${id}" data-field="detail" maxlength="260"></div>
+  <button type="button" aria-label="Quitar asignación ${id}">Quitar</button>`;
+ for (const field of Object.keys(row)) element.querySelector('[data-field="' + field + '"]').value = row[field];
+ element.querySelector('button').onclick = () => element.remove();
+ parent.append(element);
+ return element;
+}
+
+function readPlanForm() {
+ return validatePlan({
+  version: 1,
+  date: $('planDate').value,
+  start: $('planStart').value,
+  other: $('otherActions').value,
+  assignments: [...$('planRows').children].map(row =>
+   Object.fromEntries([...row.querySelectorAll('[data-field]')].map(input => [input.dataset.field, input.value])))
+ });
+}
+
+function clearRoutes() {
+ routeRequest++;
+ $('routeChoices').classList.add('hidden');
+ $('routeChoices').replaceChildren();
+ $('suggestRoutes').disabled = false;
+}
+
+function showPlan(plan = plans.get($('planDate').value)) {
+ $('planRows').replaceChildren();
+ $('planStart').value = plan?.start || '';
+ $('otherActions').value = plan?.other || '';
+ for (const row of plan?.assignments || []) addAssignment(row);
+ clearRoutes();
+}
+
+function summarizePlan(plan, detailed) {
+ const count = mode => plan.assignments.filter(row => row.mode === mode).length;
+ const sectors = mode => [...new Set(plan.assignments.filter(row => row.mode === mode).map(row => row.sector))];
+ const stats = Object.entries(planModes).map(([mode, label]) => {
+  const total = count(mode);
+  const places = sectors(mode);
+  return `<p><b>${label}</b> · ${total} ${total === 1 ? 'brigada' : 'brigadas'}${places.length ? ' · ' + escapeHtml(places.join(' • ')) : ''}</p>`;
+ }).join('');
+ const detail = detailed && plan.assignments.length ? `<div class="tablewrap"><table class="actions-table">
+ <thead><tr><th>Brigada</th><th>Acción</th><th>Sector</th><th>Recorrido o punto específico</th></tr></thead>
+ <tbody>${plan.assignments.map(row => `<tr><td>${escapeHtml(row.unit)}</td><td>${planModes[row.mode]}</td><td>${escapeHtml(row.sector)}</td><td>${escapeHtml(row.detail || '—')}</td></tr>`).join('')}</tbody>
+ </table></div>` : '';
+ return `<div class="note"><b>${escapeHtml(longDate(plan.date))}${plan.start ? ' · Desde las ' + plan.start + ' h' : ''}</b>
+ ${stats}${plan.other ? '<p><b>Otras acciones</b> · ' + escapeHtml(plan.other) + '</p>' : ''}${detail}</div>`;
+}
+
+function renderPlans() {
+ const metro = $('region').value === 'Metropolitana';
+ const selected = regionalDates.map(date => plans.get(date)).filter(Boolean);
+ $('editActions').classList.toggle('hidden', !metro);
+ if (!metro) $('actionEditor').classList.add('hidden');
+ $('editActions').setAttribute('aria-expanded', String(!$('actionEditor').classList.contains('hidden')));
+ $('actionsReport').classList.toggle('hidden', !metro);
+ $('preventionRM').classList.toggle('hidden', !metro);
+ $('actionsBody').innerHTML = selected.length
+  ? selected.map(plan => summarizePlan(plan, $('planDetail').checked)).join('')
+  : '<p class="sub">Programación sin cargar para las fechas del informe.</p>';
+}
+
+function renderPrevention(dates, records) {
+ const scope = $('preventionScope');
+ const region = $('region').value;
+ const focus = dates.map(date => {
+  const communes = [...new Set((records || []).filter(row => row.reg === region && row.date === date && Number(row.horas) > 0).map(row => row.com))].sort((a,b) => a.localeCompare(b,'es'));
+  return communes.length ? longDate(date) + ' · ' + communes.join(', ') : '';
+ }).filter(Boolean);
+ scope.textContent = focus.length ? 'Foco territorial según registros de Botón Rojo. ' + focus.join(' | ') + '.'
+  : 'Mantener la prevención y la vigilancia habitual en sectores de interfaz urbano-rural.';
+}
+
+async function arcgisQuery(url, args) {
+ const params = new URLSearchParams({ f: 'json', ...args });
+ const query = url + '?' + params;
+ const options = { cache: 'no-store', signal: AbortSignal.timeout(25000) };
+ const response = query.length <= 1800
+  ? await fetch(query, options)
+  : await fetch(url, { ...options, method: 'POST', body: params });
+ if (!response.ok) throw Error('ArcGIS respondió HTTP ' + response.status + '.');
+ const data = await response.json();
+ if (data.error) throw Error(data.error.message || 'Error en ArcGIS.');
+ return data;
+}
+
+async function routeSuggestions(date, records) {
+ const catalog = await arcgisQuery(ROUTE_SERVICE, {
+  where: '1=1', outFields: 'FID,ROL,NOMBRE_CAM,Comuna,Provincia',
+  returnGeometry: 'false', orderByFields: 'FID ASC'
+ });
+ if (!Array.isArray(catalog.features) || catalog.exceededTransferLimit) throw Error('Catálogo de rutas incompleto.');
+ const rm = (records || []).filter(row => row.reg === 'Metropolitana' && row.date === date && Number(row.horas) > 0);
+ const covered = Boolean(records?.some(row => row.date === date));
+ const byRoute = new Map();
+ if (rm.length) {
+  const polygons = await arcgisQuery(SERVICE, {
+   where: `reg = 'Metropolitana' AND date = '${date}' AND horas > 0`,
+   outFields: 'com,horas', returnGeometry: 'true', outSR: '3857'
+  });
+  if (!Array.isArray(polygons.features) || polygons.exceededTransferLimit || polygons.features.length !== rm.length ||
+      polygons.features.some(feature => !feature.geometry?.rings?.length)) {
+   throw Error('Los polígonos vigentes no coinciden con el resumen. Actualiza desde CONAF y vuelve a consultar.');
+  }
+  const matches = await Promise.all(polygons.features.map(async ({ attributes, geometry }) => {
+   const reply = await arcgisQuery(ROUTE_SERVICE, {
+    where: '1=1', returnIdsOnly: 'true', geometryType: 'esriGeometryPolygon',
+    spatialRel: 'esriSpatialRelIntersects', inSR: '3857', geometry: JSON.stringify(geometry)
+   });
+   if (!Array.isArray(reply.objectIds) && reply.objectIds !== null) throw Error('El cruce espacial no devolvió resultados verificables.');
+   return { ids: reply.objectIds || [], attributes };
+  }));
+  for (const { ids, attributes } of matches) {
+   for (const id of ids) {
+    if (!byRoute.has(id)) byRoute.set(id, new Map());
+    const communes = byRoute.get(id);
+    communes.set(attributes.com, Math.max(communes.get(attributes.com) || 0, Number(attributes.horas)));
+   }
+  }
+ }
+ const routes = catalog.features.map(({ attributes: r }) => ({
+  id: r.FID, name: [r.ROL, r.NOMBRE_CAM].filter(Boolean).join(' · '),
+  sector: r.Comuna || r.Provincia || '',
+  matches: [...(byRoute.get(r.FID) || [])].sort((a,b) => a[0].localeCompare(b[0],'es'))
+ }));
+ const priority = routes.filter(r => r.matches.length).sort((a,b) =>
+  Math.max(...b.matches.map(([,hours]) => hours)) - Math.max(...a.matches.map(([,hours]) => hours)) ||
+  b.matches.length - a.matches.length || a.name.localeCompare(b.name, 'es'));
+ const other = routes.filter(r => !r.matches.length).sort((a,b) =>
+  a.sector.localeCompare(b.sector, 'es') || a.name.localeCompare(b.name, 'es'));
+ return { priority, other, covered };
+}
+
+function routeList(title, routes) {
+ return `<details class="route-group" open><summary><b>${title} · ${routes.length}</b></summary>
+ ${routes.length ? routes.map(r => `<div><label class="route-option"><input type="checkbox" value="${Number(r.id)}">
+ ${escapeHtml(r.name)}${r.sector ? ' · ' + escapeHtml(r.sector) : ''}
+ ${r.matches.length ? ' | ' + escapeHtml(r.matches.map(([name,hours]) => name + ' ' + hours + ' h').join(', ')) : ''}
+ </label></div>`).join('') : '<p class="sub">Sin tramos en este grupo.</p>'}</details>`;
+}
+
+function showRoutes({priority, other, covered}, date) {
+ const box = $('routeChoices');
+ box.innerHTML = `<b>Rutas de patrullaje para revisión · ${escapeHtml(longDate(date))}</b>
+ <p class="sub">${covered ? 'Cruce de líneas con polígonos CONAF de la fecha seleccionada. Las horas corresponden a la categoría de duración del polígono.' : 'No hay registros verificables para la fecha en la consulta actual. Puedes seleccionar rutas del catálogo.'} Los tramos se incorporan como borrador al editor.</p>
+ ${covered ? routeList('Con cruce de Botón Rojo', priority) : ''}
+ ${routeList(covered ? 'Cobertura complementaria sin cruce registrado' : 'Catálogo de rutas', other)}
+ <button id="addRoutes" type="button">Pasar selección al editor</button>`;
+ const routes = [...priority, ...other];
+ $('addRoutes').onclick = () => {
+  const selected = [...box.querySelectorAll('input:checked')];
+  if (!selected.length) { planMessage('Selecciona al menos un tramo.'); return; }
+  for (const input of selected) {
+   const row = routes.find(route => route.id === Number(input.value));
+   const sector = row.matches.length ? row.matches.map(([com]) => com).join(' / ') : row.sector;
+   if (addAssignment({ unit: '', mode: 'patrullaje', sector: sector.slice(0,120), detail: row.name.slice(0,260) })) input.checked = false;
+  }
+  planMessage('Completa la brigada de cada tramo y aplica la programación al informe.');
+ };
+}
+
+function initActions() {
+ try {
+  const entries = JSON.parse(localStorage.getItem(PLAN_STORAGE) || '[]');
+  for (const plan of entries) { const valid = validatePlan(plan); plans.set(valid.date, valid); }
+ } catch { planMessage('No se pudo leer el historial local. Puedes cargar una programación guardada.'); }
+ $('planDate').value = todayChile();
+ showPlan();
+ $('editActions').onclick = () => {
+  const open = $('actionEditor').classList.toggle('hidden') === false;
+  $('editActions').setAttribute('aria-expanded', String(open));
+  if (open) $('planDate').focus();
+ };
+ $('planDate').onchange = () => { showPlan(); planMessage('Edita y aplica la programación para incorporar esta fecha al informe.'); };
+ $('planDetail').onchange = renderPlans;
+ $('addAssignment').onclick = () => addAssignment()?.querySelector('input')?.focus();
+ $('planForm').onsubmit = event => {
+  event.preventDefault();
+  try {
+   const plan = readPlanForm();
+   if (plan.assignments.length || plan.other) plans.set(plan.date, plan);
+   else plans.delete(plan.date);
+   renderPlans();
+   try { localStorage.setItem(PLAN_STORAGE, JSON.stringify([...plans.values()])); }
+   catch { planMessage('Aplicado en esta sesión. Descarga el archivo para conservar la programación.'); return; }
+   planMessage(regionalDates.includes(plan.date) ? 'Programación aplicada al PDF y PNG del informe.' : 'Programación guardada. La fecha queda fuera del período del informe actual.');
+  } catch (error) { planMessage(error.message); }
+ };
+ $('exportPlan').onclick = () => {
+  try {
+   const plan = readPlanForm();
+   const url = URL.createObjectURL(new Blob([JSON.stringify(plan, null, 2)], { type: 'application/json' }));
+   const link = document.createElement('a');
+   link.href = url;
+   link.download = 'CONAF_RM_programacion_' + plan.date + '.json';
+   link.click();
+   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) { planMessage(error.message); }
+ };
+ $('importPlan').onclick = () => $('planFile').click();
+ $('planFile').onchange = async () => {
+  try {
+   const file = $('planFile').files[0];
+   if (!file) return;
+   if (file.size > 200000) throw Error('El archivo de programación supera el tamaño admitido.');
+   const plan = validatePlan(JSON.parse(await file.text()));
+   $('planDate').value = plan.date;
+   showPlan(plan);
+   planMessage('Programación cargada al editor. Revísala y aplica al informe.');
+  } catch (error) { planMessage('Importación fallida. ' + error.message); }
+  finally { $('planFile').value = ''; }
+ };
+ $('suggestRoutes').onclick = async () => {
+  const date = $('planDate').value;
+  if (!validPlanDate(date)) { planMessage('Selecciona una fecha válida.'); return; }
+  const request = ++routeRequest;
+  $('suggestRoutes').disabled = true;
+  $('routeChoices').classList.add('hidden');
+  try {
+   planMessage('Consultando el catálogo y los polígonos de la fecha…');
+   const suggestions = await routeSuggestions(date, officialRecords);
+   if (request !== routeRequest) return;
+   showRoutes(suggestions, date);
+   $('routeChoices').classList.remove('hidden');
+   planMessage('Selecciona los tramos que quieras revisar para la programación.');
+  } catch (error) {
+   if (request === routeRequest) planMessage('No se pudo completar la consulta de rutas. ' + error.message);
+  } finally {
+   if (request === routeRequest) $('suggestRoutes').disabled = false;
+  }
+ };
+ renderPlans();
+ renderPrevention(regionalDates, officialRecords);
+}
+initActions();
 const initial=dates3();$('validity').textContent=`Validez: ${localeDate(initial[0])} al ${localeDate(initial[2])}`;update();
 </script></body></html>
